@@ -16,10 +16,10 @@
 - [Initialization](#initialization)
 - [Contributing](#contributing)
 
-# What Is Config
+# What is Config?
 Project configuration mechanism.
 
-# Why Use Config?
+# Why use Config?
 The [Config](https://github.com/BorderTech/java-config/blob/master/src/main/java/com/github/bordertech/config/Config.java) class provides a standard mechanism java applications can use to access configuration data via the [Apache Commons Configuration](https://commons.apache.org/proper/commons-configuration/index.html) interface.
 
 The [features](#features) of the [Default Configuration](https://github.com/BorderTech/java-config/blob/master/src/main/java/com/github/bordertech/config/DefaultConfiguration.java) combine and enhance the functionality of the classic [PropertiesConfiguration](https://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/PropertiesConfiguration.html) and [SystemConfiguration](https://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/SystemConfiguration.html) with predefined property file resources.
