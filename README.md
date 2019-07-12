@@ -14,16 +14,16 @@ Project configuration mechanism.
 
 - [Why Use Config?](#why-use-config)
 - [Getting Started](#getting-started)
-- [Config Features](#config-features)
-- [Config Initialization](#config-initialization)
+- [Features](#features)
+- [Initialization](#initialization)
 - [Contributing](#contributing)
 
 # Why Use Config?
 The [Config](https://github.com/BorderTech/java-config/blob/master/src/main/java/com/github/bordertech/config/Config.java) class provides a standard mechanism java applications can use to access configuration data via the [Apache Commons Configuration](https://commons.apache.org/proper/commons-configuration/index.html) interface.
 
-The [features](#config-features) of the [Default Configuration](https://github.com/BorderTech/java-config/blob/master/src/main/java/com/github/bordertech/config/DefaultConfiguration.java) combine and enhance the functionality of the classic [PropertiesConfiguration](https://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/PropertiesConfiguration.html) and [SystemConfiguration](https://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/SystemConfiguration.html) with predefined property file resources.
+The [features](#features) of the [Default Configuration](https://github.com/BorderTech/java-config/blob/master/src/main/java/com/github/bordertech/config/DefaultConfiguration.java) combine and enhance the functionality of the classic [PropertiesConfiguration](https://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/PropertiesConfiguration.html) and [SystemConfiguration](https://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/SystemConfiguration.html) with predefined property file resources.
 
-Projects can easily override this default implementation via the [Config Initialization](#config-initialization) settings.
+Projects can easily override this default implementation via the [initialization](#initialization) settings.
 
 # Getting started
 
@@ -52,11 +52,11 @@ Add dependency:
 
 To override the `my.example` property, create a `bordertech-app.properties` file in the resources directory and add the following:
 
-``` java
+``` java properties
 my.example=a-override-value
 ```
 
-# Config Features
+# Features
 
 ## Predefined property resources
 
@@ -66,15 +66,15 @@ The default implementation looks for the following resources:
  - `bordertech-app.properties` - application properties
  - `bordertech-local.properties` - local developer properties
 
-Projects will usually use `bordertech-app.properties`.
+Projects will usually use `bordertech-app.properties` resource files.
 
-The resources loaded into the Configuration can be overridden via [Config Initialization](#config-initialization) settings.
+The resources loaded into the Configuration can be overridden via [initialization](#initialization) settings.
 
 ## Include resources
 
 Other property files can be included from the predefined property files:
 
-``` java
+``` java properties
 include=another.properties
 ```
 
@@ -84,7 +84,7 @@ It is possible to define properties to only take effect in a certain environment
 
 When the environment property is set, it is used as the suffix for each property lookup:
 
-``` java
+``` java properties
 ## MOCK Environment
 bordertech.config.environment=MOCK
 
@@ -99,13 +99,13 @@ If no property exists with the current environment suffix then the default prope
 
 The reload of the configuration can be triggered via a `touchfile`. The `touchfile` can be set via the property:
 
-``` java
+``` java properties
 bordertech.config.touchfile=my-touchfile.properties
 ```
 
 To avoid excessive IO an interval (in milli seconds) between checks can be set and defaults to 10000:
 
-``` xml
+``` java properties
 bordertech.config.touchfile.interval=3000
 ```
 
@@ -154,13 +154,13 @@ The following methods in the `Config` class are useful for unit testing:
 - `reset()` - will restore the configuration.
 - `copyConfiguration(Configuration)` - will perform a deep-copy of the given configuration. This is useful when you need to create a backup copy of the current configuration before modifying it for a particular test.
 
-# Config Initialization
+# Initialization
 
 The initial configuration of `Config` can be overridden by setting properties in a file `bordertech-config.properties`.
 
 The following options can be set:-
 
-|Parameter key|Description|Default value|
+|Property key|Description|Default value|
 |-------------|-----------|-------------|
 |bordertech.config.default.impl|Default implementation class name|com.github.bordertech.config.DefaultConfiguration|
 |bordertech.config.spi.enabled|The flag to enable SPI lookup|true|
@@ -171,7 +171,7 @@ The following options can be set:-
 
 Example of overriding the default implementation:
 
-``` java
+``` java properties
 bordertech.config.default.impl=my.example.SpecialConfiguration
 ```
 
@@ -179,7 +179,7 @@ bordertech.config.default.impl=my.example.SpecialConfiguration
 
 Example of loading the default resources and a project specific resource:
 
-``` java
+``` java properties
 bordertech.config.resource.order+=my-project.properties
 ```
 
