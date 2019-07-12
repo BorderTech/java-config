@@ -68,6 +68,8 @@ The default implementation looks for the following resources:
 
 Projects will usually use `bordertech-app.properties` resource files.
 
+The priority of the properties is in reverse order to the list of resources (i.e. `local` overrides `app` which overrides `defaults`).
+
 The resources loaded into the Configuration can be overridden via [initialization](#initialization) settings.
 
 ## Include resources
@@ -117,7 +119,7 @@ Sometimes you may need to include System Properties in the Configuration:
 |-------------|-----------|-------------|
 |bordertech.config.parameters.useSystemProperties|This flag allows system properties to be merged into the Configuration at the end of the loading process.|false|
 |bordertech.config.parameters.useSystemOverWriteOnly|This flag controls if a system property will only overwrite an existing property|true|
-|bordertech.config.parameters.useSystemPrefixes|Define a list of system attribute prefixes that are allowed to be merged. Default is allow all.|null|
+|bordertech.config.parameters.useSystemPrefixes|Define a list of system attribute prefixes that are allowed to be merged. Default is allow all.|n/a|
 
 ## Merge Configuration into System Properties
 
@@ -137,7 +139,7 @@ Other logging options:
 |Property key|Description|Default value|
 |-------------|-----------|-------------|
 |bordertech.config.parameters.dump.console|This flag allows properties to be dumped to the console after being loaded.|false|
-|bordertech.config.parameters.dump.file|The file name to dump the properties to after being loaded.|null|
+|bordertech.config.parameters.dump.file|The file name to dump the properties to after being loaded.|n/a|
 
 ## Property listeners
 
@@ -162,10 +164,10 @@ The following options can be set:-
 
 |Property key|Description|Default value|
 |-------------|-----------|-------------|
-|bordertech.config.default.impl|Default implementation class name|com.github.bordertech.config.DefaultConfiguration|
+|bordertech.config.default.impl|Default Configuration implementation class name|com.github.bordertech.config.DefaultConfiguration|
 |bordertech.config.spi.enabled|The flag to enable SPI lookup|true|
 |bordertech.config.spi.append.default|The flag to append the default configuration|true|
-|bordertech.config.resource.order|The list of property resources to load into the configuration|bordertech-defaults.properties, bordertech-app.properties, bordertech-local.properties|
+|bordertech.config.resource.order|The list of property resources to load into the configuration. Priority of properties is in reverse order of the list.|bordertech-defaults.properties, bordertech-app.properties, bordertech-local.properties|
 
 ## Default Implementation
 
