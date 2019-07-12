@@ -1,7 +1,4 @@
-# Config
-Project configuration mechanism.
-
-## Status
+# Status
 [![Build Status](https://travis-ci.com/BorderTech/java-config.svg?branch=master)](https://travis-ci.com/BorderTech/java-config)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=alert_status)](https://sonarcloud.io/dashboard?id=bordertech-java-config)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=bordertech-java-config)
@@ -10,13 +7,17 @@ Project configuration mechanism.
 [![Javadocs](https://www.javadoc.io/badge/com.github.bordertech.config/config.svg)](https://www.javadoc.io/doc/com.github.bordertech.config/config)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.bordertech.config/config.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.github.bordertech.config%22%20AND%20a:%22config%22)
 
-# Table of Contents
+# Contents
 
-- [Why Use Config?](#why-use-config)
-- [Getting Started](#getting-started)
+- [What is Config?](#what-is-config)
+- [Why use Config?](#why-use-config)
+- [Getting started](#getting-started)
 - [Features](#features)
 - [Initialization](#initialization)
 - [Contributing](#contributing)
+
+# What Is Config
+Project configuration mechanism.
 
 # Why Use Config?
 The [Config](https://github.com/BorderTech/java-config/blob/master/src/main/java/com/github/bordertech/config/Config.java) class provides a standard mechanism java applications can use to access configuration data via the [Apache Commons Configuration](https://commons.apache.org/proper/commons-configuration/index.html) interface.
