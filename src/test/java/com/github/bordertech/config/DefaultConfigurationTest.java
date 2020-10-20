@@ -10,6 +10,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.github.bordertech.config.DefaultConfiguration.ENVIRONMENT_PROPERTY;
+
 /**
  * DefaultConfiguration_Test - JUnit tests for {@link DefaultConfiguration}.
  */
@@ -98,22 +100,20 @@ public class DefaultConfigurationTest {
 	}
 
 	@Test
+	public void testSubset() {
+		Configuration configuration = config.subset("simple.");
+
+		assertSubPropertiesNotTruncated(configuration.getProperties());
+	}
+
+	@Test
 	public void testGetSubProperties() {
-		final int propertyCount = 7;
-		// Test without the prefix truncated
-		Properties props = config.getSubProperties("simple.", false);
-		Assert.assertEquals("Incorrect number of properties", propertyCount, props.size());
-		assertPropertyEquals(EMPTY_PROPERTY_KEY, "", props);
-		assertPropertyEquals(STRING_PROPERTY_KEY, "simplePropertyValue", props);
-		assertPropertyEquals(INT_PROPERTY_KEY, "123", props);
-		assertPropertyEquals(BOOLEAN_TRUE_PROPERTY_KEY, "true", props);
-		assertPropertyEquals(BOOLEAN_FALSE_PROPERTY_KEY, "false", props);
-		assertPropertyEquals("simple.listPropertyKey", "item1,item2,item3", props);
-		assertPropertyEquals("simple.propertiesPropertyKey", "key1=value1,key2=value2,key3=value3",
-				props);
 
 		// Now test with the prefix truncated
-		props = config.getSubProperties("simple.", true);
+		assertSubPropertiesNotTruncated(config.getSubProperties("simple.", false));
+
+		Properties props = config.getSubProperties("simple.", true);
+		final int propertyCount = 7;
 		Assert.assertEquals("Incorrect number of properties", propertyCount, props.size());
 		assertPropertyEquals("emptyPropertyKey", "", props);
 		assertPropertyEquals("stringPropertyKey", "simplePropertyValue", props);
@@ -358,6 +358,44 @@ public class DefaultConfigurationTest {
 		assertPropertyEquals(STRING_PROPERTY_KEY, orig);
 	}
 
+	@Test
+	public void testContainsKey() {
+		Assert.assertTrue(config.containsKey(STRING_PROPERTY_KEY), "Key does not exist");
+		assertPropertyEquals(STRING_PROPERTY_KEY, "simplePropertyValue");
+
+		Assert.assertFalse(config.containsKey("notExpectedToFindThisKey"));
+
+		//Need to setup with env suffix
+		System.setProperty(ENVIRONMENT_PROPERTY, "suffix1");
+		config.refresh();
+
+		Assert.assertTrue(config.containsKey(STRING_PROPERTY_KEY), "Key does not exist");
+		assertPropertyEquals(STRING_PROPERTY_KEY, "simplePropertyValueSuffix1");
+
+		//Need to setup with env suffix that has no property set
+		System.setProperty(ENVIRONMENT_PROPERTY, "suffix2");
+		config.refresh();
+		Assert.assertTrue(config.containsKey(STRING_PROPERTY_KEY), "Key does not exist");
+		assertPropertyEquals(STRING_PROPERTY_KEY, "simplePropertyValue");
+
+	}
+
+	@Test
+	public void testClearAndIsEmpty() {
+		Assert.assertTrue(config.containsKey(STRING_PROPERTY_KEY), "Key does not exist");
+		config.clear();
+		Assert.assertFalse(config.containsKey(STRING_PROPERTY_KEY), "Key should not exist for this test");
+
+		Assert.assertTrue(config.isEmpty());
+	}
+
+	@Test
+	public void testClearProperty() {
+		Assert.assertTrue(config.containsKey(STRING_PROPERTY_KEY), "Key does not exist");
+		config.clearProperty(STRING_PROPERTY_KEY);
+		Assert.assertFalse(config.containsKey(STRING_PROPERTY_KEY), "Key should now not exist for this test");
+	}
+
 	/**
 	 * Asserts that the configuration contains the given key/value.
 	 *
@@ -378,5 +416,33 @@ public class DefaultConfigurationTest {
 	private void assertPropertyEquals(final String key, final Object expected,
 			final Properties props) {
 		Assert.assertEquals("Incorrect value for " + key, expected, props.get(key));
+	}
+
+
+
+	private void assertSubPropertiesTruncated(final Properties props) {
+		final int propertyCount = 7;
+		Assert.assertEquals("Incorrect number of properties", propertyCount, props.size());
+		assertPropertyEquals("emptyPropertyKey", "", props);
+		assertPropertyEquals("stringPropertyKey", "simplePropertyValue", props);
+		assertPropertyEquals("intPropertyKey", "123", props);
+		assertPropertyEquals("booleanTruePropertyKey", "true", props);
+		assertPropertyEquals("booleanFalsePropertyKey", "false", props);
+		assertPropertyEquals("listPropertyKey", "item1,item2,item3", props);
+		assertPropertyEquals("propertiesPropertyKey", "key1=value1,key2=value2,key3=value3", props);
+	}
+
+
+	private void assertSubPropertiesNotTruncated(final Properties props) {
+		final int propertyCount = 7;
+		Assert.assertEquals("Incorrect number of properties", propertyCount, props.size());
+		assertPropertyEquals(EMPTY_PROPERTY_KEY, "", props);
+		assertPropertyEquals(STRING_PROPERTY_KEY, "simplePropertyValue", props);
+		assertPropertyEquals(INT_PROPERTY_KEY, "123", props);
+		assertPropertyEquals(BOOLEAN_TRUE_PROPERTY_KEY, "true", props);
+		assertPropertyEquals(BOOLEAN_FALSE_PROPERTY_KEY, "false", props);
+		assertPropertyEquals("simple.listPropertyKey", "item1,item2,item3", props);
+		assertPropertyEquals("simple.propertiesPropertyKey", "key1=value1,key2=value2,key3=value3",
+			props);
 	}
 }
