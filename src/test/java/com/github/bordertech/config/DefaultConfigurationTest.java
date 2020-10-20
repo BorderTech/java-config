@@ -1,14 +1,15 @@
 package com.github.bordertech.config;
 
+import org.apache.commons.configuration.ConversionException;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import org.apache.commons.configuration.ConversionException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * DefaultConfiguration_Test - JUnit tests for {@link DefaultConfiguration}.
@@ -136,6 +137,24 @@ public class DefaultConfigurationTest {
 		assertPropertyEquals(STRING_PROPERTY_KEY, "simplePropertyValue");
 		config.addProperty(STRING_PROPERTY_KEY, "addedValue");
 		assertPropertyEquals(STRING_PROPERTY_KEY, "simplePropertyValue,addedValue");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddPropertyNullKey() {
+		config.addProperty(null, "addedValue");
+		Assert.fail("IllegalArgumentException expected for null key");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddPropertyEmptyKey() {
+		config.addProperty("", "addedValue");
+		Assert.fail("IllegalArgumentException expected for empty key");
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testAddPropertyNullValue() {
+		config.addProperty("A_DIFFERENT_KEY", null);
+		Assert.fail("IllegalArgumentException expected for null value");
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -358,10 +377,54 @@ public class DefaultConfigurationTest {
 		assertPropertyEquals(STRING_PROPERTY_KEY, orig);
 	}
 
+
+	@Test
+	public void testClear() {
+		Assert.assertFalse(config.isEmpty());
+		config.clear();
+		Assert.assertTrue(config.isEmpty());
+	}
+
+	@Test
+	public void testClearProperty() {
+
+		String anyKey = "ANY_KEY";
+		String anyValue = "ANY_VALUE";
+		config.addProperty(anyKey, anyValue);
+		Assert.assertEquals(anyValue, config.getString(anyKey));
+		config.clearProperty(anyKey);
+		Assert.assertNull(config.getString(anyKey));
+	}
+
+	@Test
+	public void testContainsKey() {
+		//TODO once the other branch is merged
+	}
+
+	@Test
+	public void testGetKeys() {
+		//TODO Placeholder
+	}
+
+	@Test
+	public void testConstructorMissingResourceLoader() {
+		//TODO placeholder
+	}
+
+	@Test
+	public void testOther() {
+
+		//TODO placeholder
+		/*
+		Found in load() loadResource
+		reload a file that is already loaded
+		 */
+	}
+
 	/**
 	 * Asserts that the configuration contains the given key/value.
 	 *
-	 * @param key the property key
+	 * @param key      the property key
 	 * @param expected the expected property value.
 	 */
 	private void assertPropertyEquals(final String key, final Object expected) {

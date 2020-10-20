@@ -3,6 +3,7 @@ package com.github.bordertech.config;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.MapConfiguration;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -136,7 +137,7 @@ public class DefaultConfiguration implements Configuration {
 	// -----------------------------------------------------------------------------------------------------------------
 	// State used during loading of parameters
 	/**
-	 * The messages logged during loading of the configuration. \
+	 * The messages logged during loading of the configuration.
 	 */
 	private final StringBuilder messages = new StringBuilder();
 
@@ -482,7 +483,7 @@ public class DefaultConfiguration implements Configuration {
 
 			if (includes != null) {
 				// First, do substitution on the INCLUDE_AFTER
-				substitute(INCLUDE_AFTER);
+				substitute(includes);
 
 				// Now split and process
 				String[] includeAfter = getString(INCLUDE_AFTER).split(",");
@@ -861,9 +862,8 @@ public class DefaultConfiguration implements Configuration {
 	 * in the {...} is a defined key.
 	 *
 	 * @param aKey the key to run the substitution for.
-	 * @return true if a substitutions was made, false otherwise.
 	 */
-	private boolean substitute(final String aKey) {
+	private void substitute(final String aKey) {
 
 		if (substituting.contains(aKey)) {
 			backing.put(aKey, "");
@@ -871,7 +871,7 @@ public class DefaultConfiguration implements Configuration {
 			recordMessage("WARNING: Recursive substitution detected on parameter " + aKey);
 			String history = locations.get(aKey);
 			locations.put(aKey, history + "recursion detected, using null value; " + history);
-			return true;
+			return;
 		}
 
 		try {
@@ -879,18 +879,18 @@ public class DefaultConfiguration implements Configuration {
 
 			String value = backing.get(aKey);
 			if (value == null) {
-				return false;
+				return;
 			}
 
 			String newValue = StringSubstitutor.replace(value, backing);
 
 			if (StringUtils.equals(value, newValue)) {
-				return false;
+				return;
 			}
 
 			backing.put(aKey, newValue);
 
-			if ("yes".equals(newValue) || "true".equals(newValue)) {
+			if (BooleanUtils.toBoolean(newValue)) {
 				booleanBacking.add(aKey);
 			} else {
 				booleanBacking.remove(aKey);
@@ -901,7 +901,7 @@ public class DefaultConfiguration implements Configuration {
 			history = "substitution of ${" + value + "}; " + history;
 			locations.put(aKey, history);
 
-			return true;
+			return;
 		} finally {
 			substituting.remove(aKey);
 		}
@@ -1498,13 +1498,6 @@ public class DefaultConfiguration implements Configuration {
 		 * The properties file location (if applicable).
 		 */
 		private final String location;
-
-		/**
-		 * Creates an IncludeProperties, which has not being sourced externally.
-		 */
-		IncludeProperties() {
-			this("Modified at Runtime");
-		}
 
 		/**
 		 * Creates an IncludeProperties, which will be sourced from the given location.
