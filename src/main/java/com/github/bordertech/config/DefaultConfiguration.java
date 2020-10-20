@@ -1,37 +1,5 @@
 package com.github.bordertech.config;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.configuration.MapConfiguration;
@@ -40,6 +8,16 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.SimpleLog;
+import org.apache.commons.text.StringSubstitutor;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+import java.util.*;
 
 /**
  * <p>
@@ -316,9 +294,7 @@ public class DefaultConfiguration implements Configuration {
 		}
 
 		// Now perform variable substitution.
-		do {
-			// Do nothing while loop
-		} while (substitute());
+		doSubstitution();
 
 		// Dump Header Info
 		LOG.info(getDumpHeader());
@@ -506,9 +482,7 @@ public class DefaultConfiguration implements Configuration {
 
 			if (includes != null) {
 				// First, do substitution on the INCLUDE_AFTER
-				do {
-					// Looping
-				} while (substitute(INCLUDE_AFTER));
+				substitute(INCLUDE_AFTER);
 
 				// Now split and process
 				String[] includeAfter = getString(INCLUDE_AFTER).split(",");
@@ -876,14 +850,10 @@ public class DefaultConfiguration implements Configuration {
 	 *
 	 * @return true if any substitutions were made, false otherwise.
 	 */
-	private boolean substitute() {
-		boolean madeChange = false;
-
+	private void doSubstitution() {
 		for (String key : backing.keySet()) {
-			madeChange = madeChange || substitute(key);
+			substitute(key);
 		}
-
-		return madeChange;
 	}
 
 	/**
@@ -894,7 +864,6 @@ public class DefaultConfiguration implements Configuration {
 	 * @return true if a substitutions was made, false otherwise.
 	 */
 	private boolean substitute(final String aKey) {
-		boolean madeChange = false;
 
 		if (substituting.contains(aKey)) {
 			backing.put(aKey, "");
@@ -910,34 +879,14 @@ public class DefaultConfiguration implements Configuration {
 
 			String value = backing.get(aKey);
 			if (value == null) {
-				return madeChange;
+				return false;
 			}
 
-			int start = findStartVariable(value);
+			String newValue = StringSubstitutor.replace(value, backing);
 
-			if (start == -1) {
-				return madeChange;
+			if (StringUtils.equals(value, newValue)) {
+				return false;
 			}
-
-			int end = value.indexOf('}', start);
-
-			if (end == -1) {
-				return madeChange;
-			}
-
-			String variableName = value.substring(start + 2, end);
-
-			madeChange = madeChange || substitute(variableName);
-
-			String variableValue = get(variableName);
-
-			if (variableValue == null) {
-				return madeChange;
-			}
-
-			String newValue = value.substring(0, start) + variableValue + value.substring(end + 1);
-
-			madeChange = true;
 
 			backing.put(aKey, newValue);
 
@@ -949,43 +898,13 @@ public class DefaultConfiguration implements Configuration {
 
 			// Record this substitution in the history
 			String history = locations.get(aKey);
-			history = "substitution of ${" + variableName + "}; " + history;
+			history = "substitution of ${" + value + "}; " + history;
 			locations.put(aKey, history);
 
-			return madeChange;
+			return true;
 		} finally {
 			substituting.remove(aKey);
 		}
-	}
-
-	/**
-	 * Finds the start of a variable name in the given string. Variables use the "${<i>variableName</i>}" notation.
-	 *
-	 * @param aKey the key to search.
-	 * @return the index of the start of a variable name in the given string, or -1 if not found.
-	 */
-	private int findStartVariable(final String aKey) {
-		if (aKey == null) {
-			return -1;
-		}
-
-		// Look for the first occurence of ${ in the parameter.
-		int index = aKey.indexOf('$');
-
-		for (; index >= 0; index = aKey.indexOf('$', index + 1)) {
-			if (index == aKey.length() - 1) {
-				continue;
-			}
-
-			if (aKey.charAt(index + 1) != '{') {
-				continue;
-			}
-
-			// Ahh - got it
-			break; // NOPMD
-		}
-
-		return index;
 	}
 
 	/**
