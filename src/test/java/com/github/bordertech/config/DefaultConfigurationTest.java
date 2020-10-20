@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
@@ -403,12 +404,37 @@ public class DefaultConfigurationTest {
 
 	@Test
 	public void testGetKeys() {
-		//TODO Placeholder
+		config.clear();
+		config.addProperty("aKeyFirst", "NotMatter");
+		config.addProperty("aKeySecond", "NotMatter2");
+
+		Iterator<String> iter = config.getKeys();
+
+		Assert.assertTrue(iter.hasNext());
+		Assert.assertEquals("aKeyFirst", iter.next());
+		Assert.assertTrue(iter.hasNext());
+		Assert.assertEquals("aKeySecond", iter.next());
+		Assert.assertFalse(iter.hasNext());
+
+
+		iter = config.getKeys("aKeySecond");
+
+		Assert.assertTrue(iter.hasNext());
+		Assert.assertEquals("aKeySecond", iter.next());
+		Assert.assertFalse(iter.hasNext());
 	}
 
 	@Test
 	public void testConstructorMissingResourceLoader() {
-		//TODO placeholder
+		DefaultConfiguration defaultConfiguration = new DefaultConfiguration(null);
+
+		Assert.assertNotNull(defaultConfiguration);
+		Assert.assertEquals("DEFAULTS-def", defaultConfiguration.getString("test.override.defaults"));
+
+		DefaultConfiguration defaultConfiguration2 = new DefaultConfiguration("");
+
+		Assert.assertNotNull(defaultConfiguration2);
+		Assert.assertEquals("DEFAULTS-def", defaultConfiguration2.getString("test.override.defaults"));
 	}
 
 	@Test
@@ -419,6 +445,28 @@ public class DefaultConfigurationTest {
 		Found in load() loadResource
 		reload a file that is already loaded
 		 */
+	}
+
+	@Test
+	public void testGetStringArray() {
+
+		Assert.assertEquals(0, config.getStringArray("NON_EXISTENT_KEY").length);
+
+		Assert.assertEquals(0, config.getStringArray("simple.emptyPropertyKey").length);
+
+		Assert.assertEquals(1, config.getStringArray("simple.stringPropertyKey").length);
+		Assert.assertEquals("simplePropertyValue", config.getStringArray("simple.stringPropertyKey")[0]);
+
+		String key = "stringArrayTest";
+
+		config.addProperty(key, "test1, test2,test3");
+
+		String[] result = config.getStringArray(key);
+
+		Assert.assertEquals(3, result.length);
+		Assert.assertEquals("test1", result[0]);
+		Assert.assertEquals("test2", result[1]);
+		Assert.assertEquals("test3", result[2]);
 	}
 
 	/**

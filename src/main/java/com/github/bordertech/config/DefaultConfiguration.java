@@ -202,7 +202,7 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	/**
-	 * Creates a Default Configuration with the specified resource order.
+	 * Creates a Default Configuration with the specified resour ce order.
 	 *
 	 * @param resourceLoadOrder the resource order
 	 */
@@ -223,30 +223,11 @@ public class DefaultConfiguration implements Configuration {
 	 * @return the split version of the list.
 	 */
 	private String[] parseStringArray(final String list) {
-		StringTokenizer tokenizer = new StringTokenizer(list, ",", false);
-		int length = tokenizer.countTokens();
-		String[] arr = new String[length];
-
-		for (int i = 0; tokenizer.hasMoreElements(); i++) {
-			arr[i] = cleanSpaces(tokenizer.nextToken());
+		if (StringUtils.isBlank(list)) {
+			return new String[0];
+		} else {
+			return list.trim().split("\\s*,\\s*");
 		}
-
-		return arr;
-	}
-
-	/**
-	 * Removes any leading/trailing spaces from the given string. This has the same effect as calling
-	 * {@link String#trim}, but is null-safe.
-	 *
-	 * @param aStr the String to trim.
-	 * @return the trimmed String, or null if the <code>aStr</code> was null.
-	 */
-	private String cleanSpaces(final String aStr) {
-		if (aStr == null) {
-			return aStr;
-		}
-
-		return aStr.trim();
 	}
 
 	// -----------------------------------------------------------------------------------------------------------------
@@ -1325,13 +1306,7 @@ public class DefaultConfiguration implements Configuration {
 
 	@Override
 	public String[] getStringArray(final String key) {
-		String list = get(key);
-
-		if (list == null) {
-			return new String[0];
-		}
-
-		return parseStringArray(list);
+		return parseStringArray(get(key));
 	}
 
 	@Override
