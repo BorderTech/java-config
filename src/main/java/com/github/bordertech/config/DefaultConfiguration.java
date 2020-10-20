@@ -177,7 +177,7 @@ public class DefaultConfiguration implements Configuration {
 	/**
 	 * Holds the current environment suffix (if set).
 	 */
-	private String currentEnvironment = null;
+	private String environmentSuffix = null;
 
 	/**
 	 * Our backing store is a Map object.
@@ -282,7 +282,7 @@ public class DefaultConfiguration implements Configuration {
 		// subContextCache is updated on the fly so ensure no concurrent modification.
 		subcontextCache = Collections.synchronizedMap(new HashMap());
 		runtimeProperties = new IncludeProperties("Runtime: added at runtime");
-		currentEnvironment = null;
+		environmentSuffix = null;
 	}
 
 	/**
@@ -315,6 +315,9 @@ public class DefaultConfiguration implements Configuration {
 			loadEnvironmentProperties();
 		}
 
+		// Check if environment set
+		checkEnvironmentProperty();
+
 		// Now perform variable substitution.
 		do {
 			// Do nothing while loop
@@ -336,9 +339,6 @@ public class DefaultConfiguration implements Configuration {
 		// LEGACY
 		systemProperties = getSubProperties(LEGACY_SYSTEM_PARAMETERS_PREFIX, true);
 		System.getProperties().putAll(systemProperties);
-
-		// Check if environment set
-		checkEnvironmentProperty();
 	}
 
 	/**
@@ -1550,7 +1550,7 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	protected void checkEnvironmentProperty() {
 		String env = backing.get(ENVIRONMENT_PROPERTY);
-		currentEnvironment = (env == null || env.isEmpty()) ? null : env;
+		environmentSuffix = (env == null || env.isEmpty()) ? null : env;
 	}
 
 	/**
@@ -1559,7 +1559,7 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	protected boolean useEnvironmentKey(final String key) {
 		// Has environment and is not the environment property
-		return currentEnvironment != null && !ENVIRONMENT_PROPERTY.equals(key);
+		return environmentSuffix != null && !ENVIRONMENT_PROPERTY.equals(key);
 	}
 
 	/**
@@ -1567,7 +1567,7 @@ public class DefaultConfiguration implements Configuration {
 	 * @return the property key with the environment suffix
 	 */
 	protected String getEnvironmentKey(final String key) {
-		return key + "." + currentEnvironment;
+		return key + "." + environmentSuffix;
 	}
 
 	/**
