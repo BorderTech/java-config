@@ -26,6 +26,8 @@ public class DefaultConfigurationEnvSuffixTest {
 
 		System.clearProperty(ENVIRONMENT_PROPERTY);
 
+		Assert.assertNull(System.getProperty(ENVIRONMENT_PROPERTY));
+
 		//Test the default value
 		assertPropertyEquals(config, DEFAULT_PROPERTY_VALUE);
 
