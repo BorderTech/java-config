@@ -180,11 +180,6 @@ public class DefaultConfiguration implements Configuration {
 	private IncludeProperties runtimeProperties;
 
 	/**
-	 * Variables that we are in the process of substituting. This is used to detect recursive substitutions
-	 */
-	private final Set<String> substituting = new HashSet<>();
-
-	/**
 	 * Resource load order.
 	 */
 	private final String[] resourceLoadOrder;
@@ -270,8 +265,13 @@ public class DefaultConfiguration implements Configuration {
 			loadEnvironmentProperties();
 		}
 
+		// Check if environment set
+		checkEnvironmentProperty();
+
 		// Now perform variable substitution.
-		doSubstitution();
+		for (String key : backing.keySet()) {
+			substitute(key);
+		}
 
 		// Dump Header Info
 		LOG.info(getDumpHeader());
@@ -289,9 +289,6 @@ public class DefaultConfiguration implements Configuration {
 		// LEGACY
 		systemProperties = getSubProperties(LEGACY_SYSTEM_PARAMETERS_PREFIX, true);
 		System.getProperties().putAll(systemProperties);
-
-		// Check if environment set
-		checkEnvironmentProperty();
 	}
 
 	/**
@@ -552,7 +549,7 @@ public class DefaultConfiguration implements Configuration {
 			// Load the contents of the resource, for comparison with existing resources.
 			byte[] urlContentBytes;
 			try (InputStream urlContentStream = url.openStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-				copyStream(urlContentStream, baos, 2048);
+				copyStream(urlContentStream, baos);
 				urlContentBytes = baos.toByteArray();
 			}
 			String urlContent = new String(urlContentBytes, StandardCharsets.UTF_8);
@@ -817,16 +814,6 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	/**
-	 * Iterates through the values, looking for values containing ${...} strings. For those that do, we substitute if
-	 * the stuff in the {...} is a defined key.
-	 */
-	private void doSubstitution() {
-		for (String key : backing.keySet()) {
-			substitute(key);
-		}
-	}
-
-	/**
 	 * Performs value substitution for the given key. For values containing ${...} strings, we substitute if the stuff
 	 * in the {...} is a defined key.
 	 *
@@ -834,44 +821,29 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	private void substitute(final String aKey) {
 
-		if (substituting.contains(aKey)) {
-			backing.put(aKey, "");
-			booleanBacking.remove(aKey);
-			recordMessage("WARNING: Recursive substitution detected on parameter " + aKey);
-			String history = locations.get(aKey);
-			locations.put(aKey, history + "recursion detected, using null value; " + history);
+		String value = backing.get(aKey);
+		if (value == null) {
 			return;
 		}
 
-		try {
-			substituting.add(aKey);
+		String newValue = StringSubstitutor.replace(value, backing);
 
-			String value = backing.get(aKey);
-			if (value == null) {
-				return;
-			}
-
-			String newValue = StringSubstitutor.replace(value, backing);
-
-			if (StringUtils.equals(value, newValue)) {
-				return;
-			}
-
-			backing.put(aKey, newValue);
-
-			if (BooleanUtils.toBoolean(newValue)) {
-				booleanBacking.add(aKey);
-			} else {
-				booleanBacking.remove(aKey);
-			}
-
-			// Record this substitution in the history
-			String history = locations.get(aKey);
-			history = "substitution of ${" + value + "}; " + history;
-			locations.put(aKey, history);
-		} finally {
-			substituting.remove(aKey);
+		if (StringUtils.equals(value, newValue)) {
+			return;
 		}
+
+		backing.put(aKey, newValue);
+
+		if (BooleanUtils.toBoolean(newValue)) {
+			booleanBacking.add(aKey);
+		} else {
+			booleanBacking.remove(aKey);
+		}
+
+		// Record this substitution in the history
+		String history = locations.get(aKey);
+		history = "substitution of ${" + value + "}; " + history;
+		locations.put(aKey, history);
 	}
 
 	/**
@@ -879,12 +851,11 @@ public class DefaultConfiguration implements Configuration {
 	 *
 	 * @param in the source stream.
 	 * @param out the destination stream.
-	 * @param bufferSize the buffer size.
 	 * @throws IOException if there is an error reading or writing to the streams.
 	 */
-	private static void copyStream(final InputStream in, final OutputStream out, final int bufferSize)
+	private static void copyStream(final InputStream in, final OutputStream out)
 			throws IOException {
-		final byte[] buf = new byte[bufferSize];
+		final byte[] buf = new byte[2048];
 		int bytesRead = in.read(buf);
 
 		while (bytesRead != -1) {

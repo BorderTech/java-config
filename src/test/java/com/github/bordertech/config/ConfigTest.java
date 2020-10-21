@@ -54,4 +54,45 @@ public class ConfigTest {
 		Assert.assertEquals("Correct property override value in extra second", "EXTRA-SECOND-extra-2", config.getString("test.override.extra.second"));
 	}
 
+	@Test
+	public void testReset() {
+		String key = "testResetKey";
+		String value = "whoCares";
+
+		Assert.assertNull(Config.getInstance().getString(key));
+
+		Config.getInstance().addProperty(key, value);
+
+		Assert.assertEquals(value, Config.getInstance().getString(key));
+
+		Config.reset();
+
+		Assert.assertNull(Config.getInstance().getString(key));
+	}
+
+	@Test
+	public void testSetConfiguration() {
+		DefaultConfiguration config = new DefaultConfiguration();
+		Config.setConfiguration(config);
+		Assert.assertEquals(config, Config.getInstance());
+	}
+
+	@Test
+	public void testNotifyListeners() {
+		String listenMsg = "propertyChangeHappened";
+		final String[] listen = new String[1];
+		Assert.assertNull(listen[0]);
+
+		Config.notifyListeners();
+
+		Assert.assertNull(listen[0]);
+
+		Config.addPropertyChangeListener(evt -> listen[0] = listenMsg);
+
+		Assert.assertNull(listen[0]);
+
+		Config.notifyListeners();
+
+		Assert.assertEquals(listenMsg, listen[0]);
+	}
 }
