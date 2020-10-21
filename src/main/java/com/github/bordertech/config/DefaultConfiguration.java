@@ -142,11 +142,6 @@ public class DefaultConfiguration implements Configuration {
 	private final StringBuilder messages = new StringBuilder();
 
 	/**
-	 * The resource being loaded. This is used for the relative form of resource loading.
-	 */
-	private final Deque<String> resources = new ArrayDeque<>();
-
-	/**
 	 * A generic object that allows us to synchronized refreshes. Required so that gets and refreshes are threadsafe
 	 */
 	private final Object lockObject = new Object();
@@ -207,7 +202,7 @@ public class DefaultConfiguration implements Configuration {
 	 * @param resourceLoadOrder the resource order
 	 */
 	public DefaultConfiguration(final String... resourceLoadOrder) {
-		if (resourceLoadOrder == null || resourceLoadOrder.length == 0) {
+		if (resourceLoadOrder == null || resourceLoadOrder.length == 0 || Arrays.stream(resourceLoadOrder).anyMatch(StringUtils::isBlank)) {
 			this.resourceLoadOrder = InitHelper.getDefaultResourceLoadOrder();
 		} else {
 			this.resourceLoadOrder = resourceLoadOrder;
@@ -240,7 +235,7 @@ public class DefaultConfiguration implements Configuration {
 		locations = new HashMap<>();
 
 		// subContextCache is updated on the fly so ensure no concurrent modification.
-		subcontextCache = Collections.synchronizedMap(new HashMap());
+		subcontextCache = Collections.synchronizedMap(new HashMap<>());
 		runtimeProperties = new IncludeProperties("Runtime: added at runtime");
 		currentEnvironment = null;
 	}
@@ -454,27 +449,22 @@ public class DefaultConfiguration implements Configuration {
 	 * @param resourceName the path of the resource to load from.
 	 */
 	private void loadTop(final String resourceName) {
-		try {
-			resources.push(resourceName);
 
-			load(resourceName);
+		load(resourceName);
 
-			// Now check for INCLUDE_AFTER resources
-			String includes = get(INCLUDE_AFTER);
+		// Now check for INCLUDE_AFTER resources
+		String includes = get(INCLUDE_AFTER);
 
-			if (includes != null) {
-				// First, do substitution on the INCLUDE_AFTER
-				substitute(includes);
+		if (includes != null) {
+			// First, do substitution on the INCLUDE_AFTER
+			substitute(includes);
 
-				// Now split and process
-				String[] includeAfter = getString(INCLUDE_AFTER).split(",");
-				backing.remove(INCLUDE_AFTER);
-				for (String after : includeAfter) {
-					loadTop(after);
-				}
+			// Now split and process
+			String[] includeAfter = getString(INCLUDE_AFTER).split(",");
+			backing.remove(INCLUDE_AFTER);
+			for (String after : includeAfter) {
+				loadTop(after);
 			}
-		} finally {
-			resources.pop();
 		}
 	}
 
@@ -488,8 +478,6 @@ public class DefaultConfiguration implements Configuration {
 		boolean found = false;
 
 		try {
-			resources.push(resourceName);
-
 			// Load the resource/s from the class loader
 			List<URL> urls = findClassLoaderResources(resourceName);
 			if (!urls.isEmpty()) {
@@ -513,8 +501,6 @@ public class DefaultConfiguration implements Configuration {
 			// Most likely a "Malformed uxxxx encoding." error, which is
 			// usually caused by a developer forgetting to escape backslashes
 			recordException(ex);
-		} finally {
-			resources.pop();
 		}
 	}
 
@@ -689,20 +675,24 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	private void loadSystemProperties() {
 		boolean overWriteOnly = getBoolean(USE_SYSTEM_OVERWRITEONLY, false);
-		List<String> allowedPrefixes = getList(USE_SYSTEM_PREFIXES);
-		System.getProperties().entrySet().forEach(entry
-				-> mergeExternalProperty("System Properties", (String) entry.getKey(), (String) entry.getValue(), overWriteOnly, allowedPrefixes)
-		);
+		List<Object> allowedPrefixes = getList(USE_SYSTEM_PREFIXES);
+		System
+			.getProperties()
+			.forEach((key, value) -> mergeExternalProperty("System Properties",
+				(String) key,
+				(String) value,
+				overWriteOnly,
+				allowedPrefixes));
 	}
 
 	/**
 	 * Load the OS Environment Properties into Config.
 	 */
 	private void loadEnvironmentProperties() {
-		List<String> allowedPrefixes = getList(USE_OSENV_PREFIXES);
-		System.getenv().entrySet().forEach(entry
-				-> mergeExternalProperty("Environment Properties", entry.getKey(), entry.getValue(), false, allowedPrefixes)
-		);
+		List<Object> allowedPrefixes = getList(USE_OSENV_PREFIXES);
+		System
+			.getenv()
+			.forEach((key, value) -> mergeExternalProperty("Environment Properties", key, value, false, allowedPrefixes));
 	}
 
 	/**
@@ -714,7 +704,7 @@ public class DefaultConfiguration implements Configuration {
 	 * @param overWriteOnly true if only overwrite existing properties
 	 * @param allowedPrefixes the list of allowed property prefixes
 	 */
-	private void mergeExternalProperty(final String location, final String key, final String value, final boolean overWriteOnly, final List<String> allowedPrefixes) {
+	private void mergeExternalProperty(final String location, final String key, final String value, final boolean overWriteOnly, final List<Object> allowedPrefixes) {
 
 		// Check for "include" keys (should not come from System or Environment Properties)
 		if (INCLUDE.equals(key) || INCLUDE_AFTER.equals(key)) {
@@ -742,7 +732,7 @@ public class DefaultConfiguration implements Configuration {
 	 * @param key the key to check
 	 * @return true if the key is an allowed prefix
 	 */
-	private boolean isAllowedKeyPrefix(final List<String> allowedPrefixes, final String key) {
+	private boolean isAllowedKeyPrefix(final List<Object> allowedPrefixes, final String key) {
 
 		// If no prefixes defined, then ALL keys are allowed
 		if (allowedPrefixes == null || allowedPrefixes.isEmpty()) {
@@ -750,8 +740,8 @@ public class DefaultConfiguration implements Configuration {
 		}
 
 		// Check allowed prefixes
-		for (String prefix : allowedPrefixes) {
-			if (key.startsWith(prefix)) {
+		for (Object prefix : allowedPrefixes) {
+			if (key.startsWith(prefix.toString())) {
 				return true;
 			}
 		}
@@ -829,8 +819,6 @@ public class DefaultConfiguration implements Configuration {
 	/**
 	 * Iterates through the values, looking for values containing ${...} strings. For those that do, we substitute if
 	 * the stuff in the {...} is a defined key.
-	 *
-	 * @return true if any substitutions were made, false otherwise.
 	 */
 	private void doSubstitution() {
 		for (String key : backing.keySet()) {
@@ -881,8 +869,6 @@ public class DefaultConfiguration implements Configuration {
 			String history = locations.get(aKey);
 			history = "substitution of ${" + value + "}; " + history;
 			locations.put(aKey, history);
-
-			return;
 		} finally {
 			substituting.remove(aKey);
 		}
@@ -1222,12 +1208,12 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	@Override
-	public List getList(final String key) {
-		return getList(key, new ArrayList(1));
+	public List<Object> getList(final String key) {
+		return getList(key, new ArrayList<>(1));
 	}
 
 	@Override
-	public List getList(final String key, final List defaultValue) {
+	public List<Object> getList(final String key, final List defaultValue) {
 		if (containsKey(key)) {
 			return Arrays.asList(getStringArray(key));
 		} else {
@@ -1283,7 +1269,7 @@ public class DefaultConfiguration implements Configuration {
 				throw new IllegalArgumentException("Malformed property: " + pair);
 			}
 
-			props.put(pair.substring(0, index), pair.substring(index + 1, pair.length()));
+			props.put(pair.substring(0, index), pair.substring(index + 1));
 		}
 
 		return props;
@@ -1538,7 +1524,5 @@ public class DefaultConfiguration implements Configuration {
 		public synchronized boolean equals(final Object obj) {
 			return obj instanceof IncludeProperties && Objects.equals(this.location, ((IncludeProperties) obj).location);
 		}
-
 	}
-
 }

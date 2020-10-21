@@ -8,6 +8,7 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -61,6 +62,11 @@ public class DefaultConfigurationTest {
 	 * The value for this property should be "false".
 	 */
 	private static final String BOOLEAN_FALSE_PROPERTY_KEY = "simple.booleanFalsePropertyKey";
+
+	/**
+	 * The value for this property should be "simplePropertyValue".
+	 */
+	private static final String ENV_SUFFIX_PROPERTY_KEY = "envSuffix.propertyKey";
 
 	@Before
 	public void loadProperties() {
@@ -201,7 +207,7 @@ public class DefaultConfigurationTest {
 				config.getInt(MISSING_PROPERTY_KEY, MISSING_PROPERTY_VAL));
 
 		Assert.assertEquals("Incorrect default integer value for missing key",
-				Integer.valueOf(MISSING_PROPERTY_VAL), config.getInteger(MISSING_PROPERTY_KEY, Integer.valueOf(MISSING_PROPERTY_VAL)));
+				Integer.valueOf(MISSING_PROPERTY_VAL), config.getInteger(MISSING_PROPERTY_KEY, MISSING_PROPERTY_VAL));
 	}
 
 	@Test(expected = ConversionException.class)
@@ -284,20 +290,15 @@ public class DefaultConfigurationTest {
 
 	@Test
 	public void testGetBoolean() {
-		Assert.assertEquals("Incorrect boolean value for " + BOOLEAN_TRUE_PROPERTY_KEY,
-				true, config.getBoolean(BOOLEAN_TRUE_PROPERTY_KEY));
+		Assert.assertTrue("Incorrect boolean value for " + BOOLEAN_TRUE_PROPERTY_KEY, config.getBoolean(BOOLEAN_TRUE_PROPERTY_KEY));
 
-		Assert.assertEquals("Incorrect boolean value for " + BOOLEAN_FALSE_PROPERTY_KEY,
-				false, config.getBoolean(BOOLEAN_FALSE_PROPERTY_KEY));
+		Assert.assertFalse("Incorrect boolean value for " + BOOLEAN_FALSE_PROPERTY_KEY, config.getBoolean(BOOLEAN_FALSE_PROPERTY_KEY));
 
-		Assert.assertEquals("Incorrect boolean value for missing key",
-				false, config.getBoolean(MISSING_PROPERTY_KEY));
+		Assert.assertFalse("Incorrect boolean value for missing key", config.getBoolean(MISSING_PROPERTY_KEY));
 
-		Assert.assertEquals("Incorrect default boolean value for missing key",
-				true, config.getBoolean(MISSING_PROPERTY_KEY, true));
+		Assert.assertTrue("Incorrect default boolean value for missing key", config.getBoolean(MISSING_PROPERTY_KEY, true));
 
-		Assert.assertEquals("Incorrect default boolean value for missing key",
-				Boolean.TRUE, config.getBoolean(MISSING_PROPERTY_KEY, Boolean.TRUE));
+		Assert.assertTrue("Incorrect default boolean value for missing key", config.getBoolean(MISSING_PROPERTY_KEY, Boolean.TRUE));
 	}
 
 	@Test
@@ -307,7 +308,7 @@ public class DefaultConfigurationTest {
 				Float.parseFloat("123"), config.getFloat(INT_PROPERTY_KEY), 0.0);
 
 		Assert.assertEquals("Incorrect float value for missing key",
-				new Float(0.0f), config.getFloat(MISSING_PROPERTY_KEY), 0.0);
+				0.0f, config.getFloat(MISSING_PROPERTY_KEY), 0.0);
 
 		Assert.assertEquals("Incorrect default float value for missing key",
 				expectedVal, config.getFloat(MISSING_PROPERTY_KEY, expectedVal), 0.0);
@@ -345,16 +346,16 @@ public class DefaultConfigurationTest {
 	@Test
 	public void testGetList() {
 		Assert.assertEquals("Incorrect list value for " + STRING_PROPERTY_KEY,
-				Arrays.asList(new String[]{"simplePropertyValue"}), config.getList(
+			Collections.singletonList("simplePropertyValue"), config.getList(
 				STRING_PROPERTY_KEY));
 
 		Assert.assertEquals("Incorrect list value for simple.listPropertyKey",
-				Arrays.asList(new String[]{"item1", "item2", "item3"}), config.getList(
+			Arrays.asList("item1", "item2", "item3"), config.getList(
 				"simple.listPropertyKey"));
 
-		List<String> defaultList = Arrays.asList(new String[]{"default1", "default2"});
+		List<String> defaultList = Arrays.asList("default1", "default2");
 		Assert.assertEquals("Incorrect default list value for missing key",
-				defaultList, config.getList(MISSING_PROPERTY_KEY, defaultList));
+			defaultList, config.getList(MISSING_PROPERTY_KEY, defaultList));
 	}
 
 	@Test
@@ -399,7 +400,24 @@ public class DefaultConfigurationTest {
 
 	@Test
 	public void testContainsKey() {
-		//TODO once the other branch is merged
+		Assert.assertTrue("Key does not exist but", config.containsKey(ENV_SUFFIX_PROPERTY_KEY));
+		assertPropertyEquals(ENV_SUFFIX_PROPERTY_KEY, "envSuffixPropertyValue");
+
+		Assert.assertFalse(config.containsKey("notExpectedToFindThisKey"));
+
+		//Need to setup with env suffix
+		System.setProperty(DefaultConfiguration.ENVIRONMENT_PROPERTY, "suffix1");
+		config.refresh();
+
+		Assert.assertTrue("Key does not exist", config.containsKey(ENV_SUFFIX_PROPERTY_KEY));
+		assertPropertyEquals(ENV_SUFFIX_PROPERTY_KEY, "envSuffixPropertyValueSuffix1");
+
+		//Need to setup with env suffix that has no property set
+		System.setProperty(DefaultConfiguration.ENVIRONMENT_PROPERTY, "suffix2");
+		config.refresh();
+		Assert.assertTrue("Key does not exist", config.containsKey(ENV_SUFFIX_PROPERTY_KEY));
+		assertPropertyEquals(ENV_SUFFIX_PROPERTY_KEY, "envSuffixPropertyValue");
+
 	}
 
 	@Test
@@ -426,25 +444,14 @@ public class DefaultConfigurationTest {
 
 	@Test
 	public void testConstructorMissingResourceLoader() {
-		DefaultConfiguration defaultConfiguration = new DefaultConfiguration(null);
-
-		Assert.assertNotNull(defaultConfiguration);
-		Assert.assertEquals("DEFAULTS-def", defaultConfiguration.getString("test.override.defaults"));
-
-		DefaultConfiguration defaultConfiguration2 = new DefaultConfiguration("");
-
-		Assert.assertNotNull(defaultConfiguration2);
-		Assert.assertEquals("DEFAULTS-def", defaultConfiguration2.getString("test.override.defaults"));
+		assertMissingResourceLoader(new DefaultConfiguration(null));
+		assertMissingResourceLoader(new DefaultConfiguration(""));
+		assertMissingResourceLoader(new DefaultConfiguration(" "));
 	}
 
-	@Test
-	public void testOther() {
-
-		//TODO placeholder
-		/*
-		Found in load() loadResource
-		reload a file that is already loaded
-		 */
+	private void assertMissingResourceLoader(DefaultConfiguration config) {
+		Assert.assertNotNull(config);
+		Assert.assertEquals("DEFAULTS-def", config.getString("test.override.defaults"));
 	}
 
 	@Test
