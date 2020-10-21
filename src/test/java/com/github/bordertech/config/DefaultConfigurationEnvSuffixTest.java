@@ -14,7 +14,7 @@ public class DefaultConfigurationEnvSuffixTest {
 	 * A value for this property should not exist.
 	 */
 	private static final String TEST_PROPERTY_KEY = "env.suffix.testPropertyKey";
-	private static final String DEFAULT_PROPERTY_VALUE = "defaultValue";
+	private static final String DEFAULT_PROPERTY_VALUE = "whatEverValueYouWant";
 	private static final String SUFFIX1_PROPERTY_VALUE = "suffix1Value";
 	private static final String SUFFIX2_PROPERTY_VALUE = "suffix2Value";
 
@@ -23,6 +23,8 @@ public class DefaultConfigurationEnvSuffixTest {
 	public void testEnvSuffixProperties() {
 		DefaultConfiguration config = new DefaultConfiguration(
 			"com/github/bordertech/config/DefaultConfigurationEnvSuffixTest.properties");
+
+		System.out.println(config.getProperties().toString());
 
 		//Test the default value
 		assertPropertyEquals(config, TEST_PROPERTY_KEY, DEFAULT_PROPERTY_VALUE);
