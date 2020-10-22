@@ -832,7 +832,7 @@ public class DefaultConfiguration implements Configuration {
 		out.flush();
 	}
 
-	private void put(String key, String value, String historyMsg) {
+	private void put(final String key, final String value, final String historyMsg) {
 		backing.put(key, value);
 
 		if (BooleanUtils.toBoolean(value)) {
