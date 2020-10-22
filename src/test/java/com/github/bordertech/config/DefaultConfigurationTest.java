@@ -366,10 +366,20 @@ public class DefaultConfigurationTest {
 		assertPropertyEquals("key1", "value1", props);
 		assertPropertyEquals("key2", "value2", props);
 		assertPropertyEquals("key3", "value3", props);
+
+		Properties props2 = config.getProperties();
+		Assert.assertNotEquals(props, config.getProperties());
+		Assert.assertEquals(props2, config.getProperties());
 	}
 
 	@Test
 	public void testRefresh() {
+		String listenMsg = "propertyChangeHappened";
+		final String[] listen = new String[1];
+		Assert.assertNull(listen[0]);
+
+		Config.addPropertyChangeListener(evt -> listen[0] = listenMsg);
+
 		String orig = "simplePropertyValue";
 		String newValue = "newvalue";
 		assertPropertyEquals(STRING_PROPERTY_KEY, orig);
@@ -377,6 +387,8 @@ public class DefaultConfigurationTest {
 		assertPropertyEquals(STRING_PROPERTY_KEY, newValue);
 		config.refresh();
 		assertPropertyEquals(STRING_PROPERTY_KEY, orig);
+
+		Assert.assertEquals(listenMsg, listen[0]);
 	}
 
 

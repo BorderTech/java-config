@@ -740,7 +740,7 @@ public class DefaultConfiguration implements Configuration {
 		}
 
 		// Load property
-		load(key, value, location);
+		put(key, value, location);
 	}
 
 	/**
@@ -764,49 +764,6 @@ public class DefaultConfiguration implements Configuration {
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Loads a single parameter into the configuration. This handles the special directives such as "include".
-	 *
-	 * @param key the parameter key.
-	 * @param value the parameter value.
-	 * @param location the location where the parameter was defined.
-	 */
-	private void load(final String key, final String value, final String location) {
-		// Recursive bit
-		if (INCLUDE.equals(key)) {
-			load(parseStringArray(value));
-		} else {
-			backing.put(key, value);
-
-			if ("yes".equals(value) || "true".equals(value)) {
-				booleanBacking.add(key);
-			} else {
-				booleanBacking.remove(key);
-			}
-
-			String history = locations.get(key);
-
-			if (history == null) {
-				history = location;
-			} else {
-				history = location + "; " + history;
-			}
-
-			locations.put(key, history);
-		}
-	}
-
-	/**
-	 * Loads the configuration from a set of files.
-	 *
-	 * @param subFiles the files to load from.
-	 */
-	private void load(final String[] subFiles) {
-		for (String subFile : subFiles) {
-			load(subFile);
-		}
 	}
 
 	/**
@@ -853,18 +810,7 @@ public class DefaultConfiguration implements Configuration {
 			return;
 		}
 
-		backing.put(aKey, newValue);
-
-		if (BooleanUtils.toBoolean(newValue)) {
-			booleanBacking.add(aKey);
-		} else {
-			booleanBacking.remove(aKey);
-		}
-
-		// Record this substitution in the history
-		String history = locations.get(aKey);
-		history = "substitution of ${" + value + "}; " + history;
-		locations.put(aKey, history);
+		put(aKey, newValue, "substitution of ${" + value + "}");
 	}
 
 	/**
@@ -884,6 +830,26 @@ public class DefaultConfiguration implements Configuration {
 			bytesRead = in.read(buf);
 		}
 		out.flush();
+	}
+
+	private void put(String key, String value, String historyMsg) {
+		backing.put(key, value);
+
+		if (BooleanUtils.toBoolean(value)) {
+			booleanBacking.add(key);
+		} else {
+			booleanBacking.remove(key);
+		}
+
+		String history = locations.get(key);
+
+		if (history == null) {
+			history = historyMsg;
+		} else {
+			history = historyMsg + "; " + history;
+		}
+
+		locations.put(key, history);
 	}
 
 	/**
@@ -1476,7 +1442,9 @@ public class DefaultConfiguration implements Configuration {
 
 			// Act on "include" directives immediately
 			if (INCLUDE.equals(key)) {
-				DefaultConfiguration.this.load(parseStringArray(value));
+				for (String subFile : parseStringArray(value)) {
+					DefaultConfiguration.this.load(subFile);
+				}
 				return value;
 			} else {
 				// Check for a trailing "+" sign on the key (or a leading "+= on the value")
@@ -1499,7 +1467,7 @@ public class DefaultConfiguration implements Configuration {
 					value = (already != null ? already + "," + value : value);
 				}
 
-				DefaultConfiguration.this.load(key, value, location);
+				DefaultConfiguration.this.put(key, value, location);
 
 				return super.put(key, value);
 			}
