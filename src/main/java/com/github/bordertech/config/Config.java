@@ -6,7 +6,13 @@ import org.apache.commons.configuration.MapConfiguration;
 import org.apache.commons.lang.StringUtils;
 
 import java.beans.PropertyChangeListener;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * The Config class is the central access point to the configuration mechanism, and is used to read or modify the
