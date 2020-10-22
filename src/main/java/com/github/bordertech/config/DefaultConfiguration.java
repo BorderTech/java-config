@@ -11,35 +11,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.impl.SimpleLog;
 import org.apache.commons.text.StringSubstitutor;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * <p>
@@ -47,35 +26,26 @@ import java.util.TreeSet;
  * </p>
  *
  * @author Jonathan Austin
- * @since 1.0.0
- *
  * @see Config
+ * @since 1.0.0
  */
 public class DefaultConfiguration implements Configuration {
-
-	/**
-	 * Logger for debug information.
-	 */
-	private static final Log LOG = new SimpleLog("DefaultConfig");
 
 	/**
 	 * If this parameter is defined, it is treated as a comma-separated list of additional resources to load. The
 	 * include is processed immediately.
 	 */
 	public static final String INCLUDE = "include";
-
 	/**
 	 * If this parameter is defined, it is taken as a (comma-separated) resource to load. The resource is loaded after
 	 * the current (set of) resources is loaded.
 	 */
 	public static final String INCLUDE_AFTER = "includeAfter";
-
 	/**
 	 * If this parameter is defined and resolves to true as a boolean, then the system properties will be merged at the
 	 * end of the loading process.
 	 */
 	public static final String USE_SYSTEM_PROPERTIES = "bordertech.config.parameters.useSystemProperties";
-
 	/**
 	 * If merging System Properties this parameter controls if a system property will only overwrite an existing
 	 * property. The default is false.
@@ -84,46 +54,42 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	@Deprecated
 	public static final String USE_SYSTEM_OVERWRITEONLY = "bordertech.config.parameters.useSystemOverWriteOnly";
-
 	/**
 	 * If merging System Properties, this parameter can be used to define a list of attribute prefixes that are allowed
 	 * to be merged. The default is allow all System Properties to be merged.
 	 */
 	public static final String USE_SYSTEM_PREFIXES = "bordertech.config.parameters.useSystemPrefixes";
-
 	/**
 	 * If this parameter is defined and resolves to true as a boolean, then the OS Environment properties will be merged
 	 * at the end of the loading process.
 	 */
 	public static final String USE_OSENV_PROPERTIES = "bordertech.config.parameters.useEnvProperties";
-
 	/**
 	 * If merging OS Environment Properties, this parameter can be used to define a list of attribute prefixes that are
 	 * allowed to be merged. The default is allow all Environment Properties to be merged.
 	 */
 	public static final String USE_OSENV_PREFIXES = "bordertech.config.parameters.useEnvPrefixes";
-
 	/**
 	 * If this parameter is set to true, then after loading the parameters, they will be dumped to the console.
 	 */
 	public static final String DUMP = "bordertech.config.parameters.dump.console";
-
 	/**
 	 * If this parameter is set, then after loading the parameters, they will be dumped to the specified file.
 	 */
 	public static final String DUMP_FILE = "bordertech.config.parameters.dump.file";
-
 	/**
 	 * If this parameter is set, it will be used as the environment suffix for each property lookup.
 	 */
 	public static final String ENVIRONMENT_PROPERTY = "bordertech.config.environment";
-
 	/**
 	 * Parameters with this prefix will be dumped into the System parameters. This feature is for handling recalcitrant
 	 * 3rd party software only - not for general use!!!
 	 */
 	public static final String SYSTEM_PARAMETERS_PREFIX = "bordertech.config.parameters.system.";
-
+	/**
+	 * Logger for debug information.
+	 */
+	private static final Log LOG = new SimpleLog("DefaultConfig");
 	/**
 	 * If this parameter is defined and resolves to true as a boolean, then the system properties will be merged at the
 	 * end of the loading process.
@@ -170,40 +136,34 @@ public class DefaultConfiguration implements Configuration {
 	// -----------------------------------------------------------------------------------------------------------------
 	// Implementation
 	/**
+	 * Resource load order.
+	 */
+	private final String[] resourceLoadOrder;
+	/**
 	 * Holds the current environment suffix (if set).
 	 */
 	private String currentEnvironment = null;
-
 	/**
 	 * Our backing store is a Map object.
 	 */
 	private Map<String, String> backing;
-
 	/**
 	 * Explicitly cache booleans for flag look-up speed.
 	 */
 	private Set<String> booleanBacking;
-
 	/**
 	 * Stores "explanations" of where each setting comes from. Each parameter will have a history, explaining all the
 	 * locations where that parameter was defined, in reverse order (so the first entry is the defining entry).
 	 */
 	private Map<String, String> locations;
-
 	/**
 	 * Cache of subcontexts, by {true,false}-prefix.
 	 */
 	private Map<String, Properties> subcontextCache;
-
 	/**
 	 * Properties added at runtime.
 	 */
 	private IncludeProperties runtimeProperties;
-
-	/**
-	 * Resource load order.
-	 */
-	private final String[] resourceLoadOrder;
 
 	/**
 	 * Creates a Default Configuration.
@@ -228,6 +188,27 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	/**
+	 * Copies information from the input stream to the output stream using a specified buffer size.
+	 *
+	 * @param in  the source stream.
+	 * @param out the destination stream.
+	 * @throws IOException if there is an error reading or writing to the streams.
+	 */
+	private static void copyStream(final InputStream in, final OutputStream out)
+		throws IOException {
+		final byte[] buf = new byte[2048];
+		int bytesRead = in.read(buf);
+
+		while (bytesRead != -1) {
+			out.write(buf, 0, bytesRead);
+			bytesRead = in.read(buf);
+		}
+		out.flush();
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+
+	/**
 	 * Splits the given comma-delimited string into an an array. Leading/trailing spaces in list items will be trimmed.
 	 *
 	 * @param list the String to split.
@@ -241,7 +222,6 @@ public class DefaultConfiguration implements Configuration {
 		}
 	}
 
-	// -----------------------------------------------------------------------------------------------------------------
 	/**
 	 * This method initialises most of the instance variables.
 	 */
@@ -537,7 +517,7 @@ public class DefaultConfiguration implements Configuration {
 		recordMessage("Using classloader " + classloader);
 
 		List<URL> urls = new ArrayList<>();
-		for (Enumeration<URL> res = classloader.getResources(resourceName); res.hasMoreElements();) {
+		for (Enumeration<URL> res = classloader.getResources(resourceName); res.hasMoreElements(); ) {
 			urls.add(res.nextElement());
 		}
 		recordMessage("Resource " + resourceName + " was found  " + urls.size() + " times");
@@ -620,10 +600,12 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	private void loadFileResource(final File file) throws IOException {
 
-		recordMessage("Loading from file " + filename(file) + "...");
+		String fileName = filename(file);
+
+		recordMessage("Loading from file " + fileName + "...");
 
 		// Use the "IncludeProperties" to load properties into us, one at a time....
-		IncludeProperties properties = new IncludeProperties("file:" + filename(file));
+		IncludeProperties properties = new IncludeProperties("file:" + fileName);
 		try (FileInputStream fin = new FileInputStream(file);
 			 BufferedInputStream bin = new BufferedInputStream(fin)) {
 			properties.load(bin);
@@ -716,10 +698,10 @@ public class DefaultConfiguration implements Configuration {
 	/**
 	 * Merge the external property.
 	 *
-	 * @param location the location of the properties
-	 * @param key the property key
-	 * @param value the property value
-	 * @param overWriteOnly true if only overwrite existing properties
+	 * @param location        the location of the properties
+	 * @param key             the property key
+	 * @param value           the property value
+	 * @param overWriteOnly   true if only overwrite existing properties
 	 * @param allowedPrefixes the list of allowed property prefixes
 	 */
 	private void mergeExternalProperty(final String location, final String key, final String value, final boolean overWriteOnly, final List<Object> allowedPrefixes) {
@@ -747,7 +729,7 @@ public class DefaultConfiguration implements Configuration {
 	 * Check allowed prefixes.
 	 *
 	 * @param allowedPrefixes the list of allowed prefixes
-	 * @param key the key to check
+	 * @param key             the key to check
 	 * @return true if the key is an allowed prefix
 	 */
 	private boolean isAllowedKeyPrefix(final List<Object> allowedPrefixes, final String key) {
@@ -811,25 +793,6 @@ public class DefaultConfiguration implements Configuration {
 		}
 
 		put(aKey, newValue, "substitution of ${" + value + "}");
-	}
-
-	/**
-	 * Copies information from the input stream to the output stream using a specified buffer size.
-	 *
-	 * @param in the source stream.
-	 * @param out the destination stream.
-	 * @throws IOException if there is an error reading or writing to the streams.
-	 */
-	private static void copyStream(final InputStream in, final OutputStream out)
-			throws IOException {
-		final byte[] buf = new byte[2048];
-		int bytesRead = in.read(buf);
-
-		while (bytesRead != -1) {
-			out.write(buf, 0, bytesRead);
-			bytesRead = in.read(buf);
-		}
-		out.flush();
 	}
 
 	private void put(final String key, final String value, final String historyMsg) {
@@ -1271,7 +1234,7 @@ public class DefaultConfiguration implements Configuration {
 	/**
 	 * Returns a sub-set of the parameters contained in this configuration.
 	 *
-	 * @param prefix the prefix of the parameter keys which should be included.
+	 * @param prefix   the prefix of the parameter keys which should be included.
 	 * @param truncate if true, the prefix is truncated in the returned properties.
 	 * @return the properties sub-set, may be empty.
 	 */
@@ -1279,34 +1242,28 @@ public class DefaultConfiguration implements Configuration {
 		String cacheKey = truncate + prefix;
 		Properties sub = subcontextCache.get(cacheKey);
 
-		if (sub != null) {
-			// make a copy so users can't change.
-			Properties copy = new Properties();
-			copy.putAll(sub);
-			return copy;
-		}
+		if (sub == null) {
+			sub = new Properties();
 
-		sub = new Properties();
+			int length = prefix.length();
 
-		int length = prefix.length();
+			for (Map.Entry<String, String> entry : backing.entrySet()) {
 
-		for (Map.Entry<String, String> entry : backing.entrySet()) {
+				String key = entry.getKey();
 
-			String key = entry.getKey();
+				if (key.startsWith(prefix)) {
+					// If we are truncating, remove the prefix
+					String newKey = key;
 
-			if (key.startsWith(prefix)) {
-				// If we are truncating, remove the prefix
-				String newKey = key;
+					if (truncate) {
+						newKey = key.substring(length);
+					}
 
-				if (truncate) {
-					newKey = key.substring(length);
+					sub.setProperty(newKey, entry.getValue());
 				}
-
-				sub.setProperty(newKey, entry.getValue());
 			}
+			subcontextCache.put(cacheKey, sub);
 		}
-
-		subcontextCache.put(cacheKey, sub);
 
 		// Make a copy so users can't change.
 		Properties copy = new Properties();
@@ -1316,8 +1273,7 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	/**
-	 *
-	 * @param key the property key
+	 * @param key    the property key
 	 * @param defolt the default value if key not available
 	 * @return the property value or null
 	 */
@@ -1331,7 +1287,6 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	/**
-	 *
 	 * @param key the property key
 	 * @return the property value or null
 	 */
@@ -1349,9 +1304,8 @@ public class DefaultConfiguration implements Configuration {
 	/**
 	 * Add or Modify a property at runtime.
 	 *
-	 * @param name the property name
+	 * @param name  the property name
 	 * @param value the property value
-	 *
 	 */
 	protected void addOrModifyProperty(final String name, final String value) {
 		if (name == null) {
@@ -1431,7 +1385,7 @@ public class DefaultConfiguration implements Configuration {
 		 * Adds a value to the properties set. This has been overridden to support the Configuration extensions (e.g.
 		 * the "include" directive).
 		 *
-		 * @param aKey the key to add
+		 * @param aKey   the key to add
 		 * @param aValue the value to add
 		 * @return the old value for the key, or null if there was no previously associated value.
 		 */
@@ -1471,18 +1425,6 @@ public class DefaultConfiguration implements Configuration {
 
 				return super.put(key, value);
 			}
-		}
-
-		@Override
-		public synchronized int hashCode() {
-			int hash = 5;
-			hash = 97 * hash + Objects.hashCode(this.location);
-			return hash;
-		}
-
-		@Override
-		public synchronized boolean equals(final Object obj) {
-			return obj instanceof IncludeProperties && Objects.equals(this.location, ((IncludeProperties) obj).location);
 		}
 	}
 }

@@ -1,8 +1,16 @@
 package com.github.bordertech.config;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.awaitility.Awaitility;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Ensure the Config class does what it says.
@@ -21,8 +29,10 @@ public class ConfigTest {
 	@Test
 	public void testCopyConfiguration() {
 		Configuration config = Config.getInstance();
+		config.setProperty("test.in.app", "expected");
 		Configuration result = Config.copyConfiguration(config);
 		Assert.assertNotSame("Copy should return a new instance", config, result);
+		Assert.assertEquals(config.getString("test.in.app"), result.getString("test.in.app"));
 	}
 
 	@Test
@@ -32,6 +42,13 @@ public class ConfigTest {
 		config.setProperty("kung.fu", expected);
 		String actual = config.getString("kung.fu");
 		Assert.assertEquals("Copy should maintain properties", expected, actual);
+
+		PropertiesConfiguration props = new PropertiesConfiguration();
+		props.setProperty("listProperty", Arrays.asList("one", "two"));
+
+		Configuration copy = Config.copyConfiguration(props);
+
+		Assert.assertEquals(props.getString("listProperty"), copy.getString("listProperty"));
 	}
 
 	@Test
@@ -78,6 +95,36 @@ public class ConfigTest {
 	}
 
 	@Test
+	public void testTouchFile() throws Exception {
+
+		final String key = "test.in.defaults";
+		final String value = "override";
+
+		DefaultConfiguration config = new DefaultConfiguration();
+		config.setProperty("bordertech.config.touchfile", "./parameters.touch");
+		config.setProperty("bordertech.config.touchfile.interval", "2000");
+		config.setProperty(key, "override");
+		Config.setConfiguration(config);
+
+		Assert.assertEquals(value, Config.getInstance().getString(key));
+
+		FileUtils.touch(new File("./parameters.touch"));
+
+		Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> Config.getInstance().getString(key).equals("IN-DEFAULTS"));
+	}
+
+	@Test(expected = IllegalStateException.class)
+	public void testConfigurationMissingDefaultClass() throws Exception {
+		DefaultConfiguration config = new DefaultConfiguration();
+		Config.setConfiguration(config);
+
+		InitHelperAccessor.overrideDefaultConfig("a.package.ClassNotExists", false);
+
+		Config.reset();
+		Assert.fail("IllegalStateException expected");
+	}
+
+	@Test
 	public void testNotifyListeners() {
 		String listenMsg = "propertyChangeHappened";
 		final String[] listen = new String[1];
@@ -94,5 +141,17 @@ public class ConfigTest {
 		Config.notifyListeners();
 
 		Assert.assertEquals(listenMsg, listen[0]);
+	}
+
+	@Test
+	public void testGetInstanceSpiConfig() throws Exception {
+		TestSpiConfiguration t = new TestSpiConfiguration();
+		InitHelperAccessor.overrideSpiEnabled(false, true);
+		Assert.assertTrue(Config.getInstance() instanceof DefaultConfiguration);
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		InitHelperAccessor.reset();
 	}
 }
