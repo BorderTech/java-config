@@ -537,7 +537,7 @@ public class DefaultConfiguration implements Configuration {
 		recordMessage("Using classloader " + classloader);
 
 		List<URL> urls = new ArrayList<>();
-		for (Enumeration<URL> res = classloader.getResources(resourceName); res.hasMoreElements(); ) {
+		for (Enumeration<URL> res = classloader.getResources(resourceName); res.hasMoreElements();) {
 			urls.add(res.nextElement());
 		}
 		recordMessage("Resource " + resourceName + " was found  " + urls.size() + " times");
