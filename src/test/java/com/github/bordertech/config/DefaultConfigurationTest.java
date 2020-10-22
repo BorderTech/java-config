@@ -7,7 +7,11 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 import static com.github.bordertech.config.DefaultConfiguration.ENVIRONMENT_PROPERTY;
 
@@ -55,11 +59,6 @@ public class DefaultConfigurationTest {
 	 * The value for this property should be "true".
 	 */
 	private static final String BOOLEAN_TRUE_PROPERTY_KEY = "simple.booleanTruePropertyKey";
-
-	/**
-	 * The value for this property should be "true".
-	 */
-	private static final String BOOLEAN_TRUE_PROPERTY_ENV_SUFFIX_KEY = BOOLEAN_TRUE_PROPERTY_KEY + "suffix";
 
 	/**
 	 * The value for this property should be "false".

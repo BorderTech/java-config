@@ -118,7 +118,7 @@ public class ConfigTest {
 		DefaultConfiguration config = new DefaultConfiguration();
 		Config.setConfiguration(config);
 
-		InitHelperAccessor.overrideDefaultConfig("a.package.ClassNotExists", false);
+		AccessInitHelper.overrideDefaultConfig("a.package.ClassNotExists", false);
 
 		Config.reset();
 		Assert.fail("IllegalStateException expected");
@@ -145,13 +145,12 @@ public class ConfigTest {
 
 	@Test
 	public void testGetInstanceSpiConfig() throws Exception {
-		TestSpiConfiguration t = new TestSpiConfiguration();
-		InitHelperAccessor.overrideSpiEnabled(false, true);
+		AccessInitHelper.overrideSpiEnabled(false, true);
 		Assert.assertTrue(Config.getInstance() instanceof DefaultConfiguration);
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		InitHelperAccessor.reset();
+		AccessInitHelper.reset();
 	}
 }
