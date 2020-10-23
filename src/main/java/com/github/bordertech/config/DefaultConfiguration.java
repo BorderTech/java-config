@@ -941,7 +941,7 @@ public class DefaultConfiguration implements Configuration {
 
 	@Override
 	public boolean containsKey(final String key) {
-		if (useEnvironmentKey(key) && backing.containsKey(getEnvironmentKey(key))) {
+		if (backing.containsKey(getEnvironmentKey(key))) {
 			return true;
 		}
 		return backing.containsKey(key);
@@ -989,7 +989,7 @@ public class DefaultConfiguration implements Configuration {
 
 	@Override
 	public boolean getBoolean(final String key) {
-		if (useEnvironmentKey(key) && booleanBacking.contains(getEnvironmentKey(key))) {
+		if (booleanBacking.contains(getEnvironmentKey(key))) {
 			return true;
 		}
 		return booleanBacking.contains(key);
@@ -1310,11 +1310,9 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	protected String get(final String key) {
 		// Check environment property
-		if (useEnvironmentKey(key)) {
-			String result = backing.get(getEnvironmentKey(key));
-			if (result != null) {
-				return result;
-			}
+		String result = backing.get(getEnvironmentKey(key));
+		if (result != null) {
+			return result;
 		}
 		return backing.get(key);
 	}
@@ -1377,7 +1375,11 @@ public class DefaultConfiguration implements Configuration {
 	 * @return the property key with the environment suffix
 	 */
 	protected String getEnvironmentKey(final String key) {
-		return key + "." + currentEnvironment;
+		if (useEnvironmentKey(key)) {
+			return key + "." + currentEnvironment;
+		} else {
+			return key;
+		}
 	}
 
 	/**
