@@ -1,10 +1,13 @@
 package com.github.bordertech.config;
 
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConversionException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -519,6 +522,62 @@ public class DefaultConfigurationTest {
 		Assert.assertEquals("test1", result[0]);
 		Assert.assertEquals("test2", result[1]);
 		Assert.assertEquals("test3", result[2]);
+	}
+
+	@Test
+	public void testGetEnvironmentKey() {
+
+		System.setProperty(ENVIRONMENT_PROPERTY, "env");
+
+		config.refresh();
+
+		final String key = "key";
+
+		Assert.assertEquals(key + ".env", config.getEnvironmentKey(key));
+
+		System.clearProperty(ENVIRONMENT_PROPERTY);
+	}
+
+	@Test
+	public void testUseEnvironmentKey() {
+
+		System.clearProperty(ENVIRONMENT_PROPERTY);
+		config.refresh();
+
+		Assert.assertFalse(config.useEnvironmentKey("anything"));
+
+		System.setProperty(ENVIRONMENT_PROPERTY, "env");
+
+		config.refresh();
+		Assert.assertFalse(config.useEnvironmentKey(ENVIRONMENT_PROPERTY));
+
+		Assert.assertTrue(config.useEnvironmentKey("key"));
+
+		System.clearProperty(ENVIRONMENT_PROPERTY);
+	}
+
+	@Test
+	public void testSubset() {
+		Configuration subConfig = config.subset("simple.propertiesPropertyKey");
+		Properties props = subConfig.getProperties("simple.propertiesPropertyKey");
+
+		Assert.assertEquals("Incorrect number of properties", 3, props.size());
+		assertPropertyEquals("key1", "value1", props);
+		assertPropertyEquals("key2", "value2", props);
+		assertPropertyEquals("key3", "value3", props);
+	}
+
+	@Test
+	public void testLoadWithPhysicalFile() throws Exception {
+
+		Properties props = new Properties();
+		props.setProperty("physical.file.include", "physicalFileIncludeValue");
+		props.store(new FileWriter(new File("./DefaultConfigTestInclude.properties")), null);
+
+		DefaultConfiguration config = new DefaultConfiguration(
+			"com/github/bordertech/config/DefaultConfigurationTest_include.properties");
+
+		Assert.assertEquals("physicalFileIncludeValue", config.getString("physical.file.include"));
 	}
 
 	/**

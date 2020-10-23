@@ -478,7 +478,8 @@ public class DefaultConfiguration implements Configuration {
 			substitute(includes);
 
 			// Now split and process
-			String[] includeAfter = getString(INCLUDE_AFTER).split(",");
+			String[] includeAfter = parseStringArray(getString(INCLUDE_AFTER));
+
 			backing.remove(INCLUDE_AFTER);
 			for (String after : includeAfter) {
 				loadTop(after);
