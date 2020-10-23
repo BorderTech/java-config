@@ -159,31 +159,32 @@ public class DefaultConfiguration implements Configuration {
 	 * Resource load order.
 	 */
 	private final String[] resourceLoadOrder;
+
 	/**
 	 * Holds the current environment suffix (if set).
 	 */
 	private String currentEnvironment = null;
+
 	/**
 	 * Our backing store is a Map object.
 	 */
 	private Map<String, String> backing;
+
 	/**
 	 * Explicitly cache booleans for flag look-up speed.
 	 */
 	private Set<String> booleanBacking;
+
 	/**
 	 * Stores "explanations" of where each setting comes from. Each parameter will have a history, explaining all the
 	 * locations where that parameter was defined, in reverse order (so the first entry is the defining entry).
 	 */
 	private Map<String, String> locations;
+
 	/**
 	 * Cache of subcontexts, by {true,false}-prefix.
 	 */
 	private Map<String, Properties> subcontextCache;
-	/**
-	 * Properties added at runtime.
-	 */
-	private IncludeProperties runtimeProperties;
 
 	/**
 	 * Creates a Default Configuration.
@@ -252,7 +253,6 @@ public class DefaultConfiguration implements Configuration {
 
 		// subContextCache is updated on the fly so ensure no concurrent modification.
 		subcontextCache = Collections.synchronizedMap(new HashMap<>());
-		runtimeProperties = new IncludeProperties("Runtime: added at runtime");
 		currentEnvironment = null;
 	}
 
@@ -605,8 +605,7 @@ public class DefaultConfiguration implements Configuration {
 			recordMessage("Loading from url " + url + "...");
 			try (ByteArrayInputStream in = new ByteArrayInputStream(buff)) {
 				// Use the "IncludeProperties" to load properties into us one at a time....
-				IncludeProperties properties = new IncludeProperties(url.toString());
-				properties.load(in);
+				new IncludeProperties(url.toString()).load(in);
 			}
 		}
 
@@ -620,17 +619,15 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	private void loadFileResource(final File file) throws IOException {
 
-		String fileName = filename(file);
+		final String fileName = filename(file);
 
 		recordMessage("Loading from file " + fileName + "...");
 
-		// Use the "IncludeProperties" to load properties into us, one at a time....
-		IncludeProperties properties = new IncludeProperties("file:" + fileName);
 		try (FileInputStream fin = new FileInputStream(file);
 			 BufferedInputStream bin = new BufferedInputStream(fin)) {
-			properties.load(bin);
+			// Use the "IncludeProperties" to load properties into us, one at a time....
+			new IncludeProperties("file:" + fileName).load(bin);
 		}
-
 	}
 
 	/**
@@ -1342,7 +1339,7 @@ public class DefaultConfiguration implements Configuration {
 
 		recordMessage("modifyProperties() - Adding property '" + name + "' with the value '" + value + "'.");
 
-		runtimeProperties.setProperty(name, value);
+		new IncludeProperties("Runtime: added at runtime").put(name, value);
 
 		handlePropertiesChanged();
 	}
@@ -1383,7 +1380,10 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	/**
-	 * A helper class for properties which are being loaded.
+	 * A helper class for properties which are being loaded into the {@link DefaultConfiguration}.
+	 *
+	 * <p>This is used to ensure on the call of put(key, value) is immediately loaded into the
+	 * {@link DefaultConfiguration} to respect the order hierarchy for the configuration.</p>
 	 */
 	class IncludeProperties extends Properties {
 

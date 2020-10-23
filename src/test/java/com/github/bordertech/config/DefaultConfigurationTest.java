@@ -225,7 +225,7 @@ public class DefaultConfigurationTest {
 
 	@Test(expected = ConversionException.class)
 	public void testGetInvalidIntObject() {
-		config.getInt(STRING_PROPERTY_KEY, Integer.valueOf("1"));
+		config.getInt(STRING_PROPERTY_KEY, new Integer("1"));
 	}
 
 	@Test
