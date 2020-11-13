@@ -1,6 +1,9 @@
 package com.github.bordertech.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.configuration.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
@@ -53,4 +56,27 @@ public class InitHelperTest {
 		InitHelper.loadPropertyFile("InvalidPropertiesFile.properties");
 	}
 
+	@Test
+	public void testParseStringArray() {
+		Assert.assertEquals(0, InitHelper.parseStringArray(null).length);
+		Assert.assertEquals(0, InitHelper.parseStringArray("").length);
+		Assert.assertEquals(1, InitHelper.parseStringArray("sometext").length);
+
+		String[] result = InitHelper.parseStringArray(" first , second , third ");
+		Assert.assertEquals(3, result.length);
+		Assert.assertEquals("first", result[0]);
+		Assert.assertEquals("second", result[1]);
+		Assert.assertEquals("third", result[2]);
+	}
+
+	@Test
+	public void testIsAllowedKeyPrefix() {
+		Assert.assertTrue(InitHelper.isAllowedKeyPrefix(null, ""));
+		Assert.assertTrue(InitHelper.isAllowedKeyPrefix(new ArrayList<>(), ""));
+
+		final List<String> prefixes = Arrays.asList("prefix", "prefixdifferent");
+
+		Assert.assertTrue(InitHelper.isAllowedKeyPrefix(prefixes, "prefix"));
+		Assert.assertFalse(InitHelper.isAllowedKeyPrefix(prefixes, "different"));
+	}
 }

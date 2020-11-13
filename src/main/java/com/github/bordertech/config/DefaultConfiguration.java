@@ -1,19 +1,5 @@
 package com.github.bordertech.config;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConversionException;
-import org.apache.commons.configuration.MapConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.impl.SimpleLog;
-import org.apache.commons.text.StringSubstitutor;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,7 +8,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -43,6 +28,21 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConversionException;
+import org.apache.commons.configuration.MapConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.impl.SimpleLog;
+import org.apache.commons.text.StringSubstitutor;
 
 /**
  * <p>
@@ -225,39 +225,7 @@ public class DefaultConfiguration implements Configuration {
 		load();
 	}
 
-	/**
-	 * Copies information from the input stream to the output stream using a specified buffer size.
-	 *
-	 * @param in  the source stream.
-	 * @param out the destination stream.
-	 * @throws IOException if there is an error reading or writing to the streams.
-	 */
-	private static void copyStream(final InputStream in, final OutputStream out) throws IOException {
-		final byte[] buf = new byte[2048];
-		int bytesRead = in.read(buf);
-
-		while (bytesRead != -1) {
-			out.write(buf, 0, bytesRead);
-			bytesRead = in.read(buf);
-		}
-		out.flush();
-	}
-
 	// -----------------------------------------------------------------------------------------------------------------
-
-	/**
-	 * Splits the given comma-delimited string into an an array. Leading/trailing spaces in list items will be trimmed.
-	 *
-	 * @param list the String to split.
-	 * @return the split version of the list.
-	 */
-	private String[] parseStringArray(final String list) {
-		if (StringUtils.isBlank(list)) {
-			return new String[0];
-		} else {
-			return list.trim().split("\\s*,\\s*");
-		}
-	}
 
 	/**
 	 * This method initialises most of the instance variables.
@@ -491,7 +459,7 @@ public class DefaultConfiguration implements Configuration {
 			substitute(INCLUDE_AFTER);
 
 			// Now split and process
-			String[] includeAfter = parseStringArray(get(INCLUDE_AFTER));
+			String[] includeAfter = InitHelper.parseStringArray(get(INCLUDE_AFTER));
 
 			backing.remove(INCLUDE_AFTER);
 			for (String after : includeAfter) {
@@ -594,7 +562,7 @@ public class DefaultConfiguration implements Configuration {
 			// Load the contents of the resource, for comparison with existing resources.
 			byte[] urlContentBytes;
 			try (InputStream urlContentStream = url.openStream(); ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-				copyStream(urlContentStream, baos);
+				IOUtils.copy(urlContentStream, baos, 2048);
 				urlContentBytes = baos.toByteArray();
 			}
 			String urlContent = new String(urlContentBytes, StandardCharsets.UTF_8);
@@ -755,7 +723,7 @@ public class DefaultConfiguration implements Configuration {
 		}
 
 		// Check allowed prefixes
-		if (!isAllowedKeyPrefix(allowedPrefixes, key)) {
+		if (!InitHelper.isAllowedKeyPrefix(allowedPrefixes, key)) {
 			return;
 		}
 
@@ -766,29 +734,6 @@ public class DefaultConfiguration implements Configuration {
 
 		// Load property
 		put(key, value, location);
-	}
-
-	/**
-	 * Check allowed prefixes.
-	 *
-	 * @param allowedPrefixes the list of allowed prefixes
-	 * @param key             the key to check
-	 * @return true if the key is an allowed prefix
-	 */
-	private boolean isAllowedKeyPrefix(final List<String> allowedPrefixes, final String key) {
-
-		// If no prefixes defined, then ALL keys are allowed
-		if (allowedPrefixes == null || allowedPrefixes.isEmpty()) {
-			return true;
-		}
-
-		// Check allowed prefixes
-		for (String prefix : allowedPrefixes) {
-			if (key.startsWith(prefix)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
@@ -1249,7 +1194,7 @@ public class DefaultConfiguration implements Configuration {
 
 	@Override
 	public String[] getStringArray(final String key) {
-		return parseStringArray(get(key));
+		return InitHelper.parseStringArray(get(key));
 	}
 
 	@Override
@@ -1486,7 +1431,7 @@ public class DefaultConfiguration implements Configuration {
 
 			// Act on "include" directives immediately
 			if (INCLUDE.equals(key)) {
-				for (String subFile : parseStringArray(StringSubstitutor.replace(value, backing))) {
+				for (String subFile : InitHelper.parseStringArray(StringSubstitutor.replace(value, backing))) {
 					DefaultConfiguration.this.load(subFile);
 				}
 				return value;

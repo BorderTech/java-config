@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.ConfigurationUtils;
@@ -172,4 +173,33 @@ public final class InitHelper {
 		return Collections.unmodifiableList(resources);
 	}
 
+	/**
+	 * Splits the given comma-delimited string into an an array. Leading/trailing spaces in list items will be trimmed.
+	 *
+	 * @param list the String to split.
+	 * @return the split version of the list.
+	 */
+	public static String[] parseStringArray(final String list) {
+		if (StringUtils.isBlank(list)) {
+			return new String[0];
+		} else {
+			return list.trim().split("\\s*,\\s*");
+		}
+	}
+
+	/**
+	 * Check allowed prefixes.
+	 *
+	 * @param allowedPrefixes the list of allowed prefixes
+	 * @param key             the key to check
+	 * @return true if the key is an allowed prefix
+	 */
+	public static boolean isAllowedKeyPrefix(final List<String> allowedPrefixes, final String key) {
+		// If no prefixes defined, then ALL keys are allowed
+		if (allowedPrefixes == null || allowedPrefixes.isEmpty()) {
+			return true;
+		} else {
+			return allowedPrefixes.stream().anyMatch(it -> StringUtils.startsWith(key, it));
+		}
+	}
 }
