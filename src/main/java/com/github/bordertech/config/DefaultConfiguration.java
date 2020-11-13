@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -102,7 +103,9 @@ public class DefaultConfiguration implements Configuration {
 	public static final String DUMP_FILE = "bordertech.config.parameters.dump.file";
 	/**
 	 * If this parameter is set, it will be used as the environment suffix for each property lookup.
+	 * @deprecated Use {@link #PROFILE_PROPERTY} to define the profile property
 	 */
+	@Deprecated
 	public static final String ENVIRONMENT_PROPERTY = "bordertech.config.environment";
 	/**
 	 * If this parameter is set, it will be used as the environment suffix for each property lookup.
@@ -168,14 +171,9 @@ public class DefaultConfiguration implements Configuration {
 	private final String[] resourceLoadOrder;
 
 	/**
-	 * Holds the current environment suffix (if set).
-	 *
-	 * @deprecated - Replaced by current Profile
+	 * Hold the current profile (if set).
 	 */
-	@Deprecated
-	private String currentEnvironment = null;
-
-	private String environmentProfile = null;
+	private String currentProfile = null;
 
 	/**
 	 * Our backing store is a Map object.
@@ -197,6 +195,11 @@ public class DefaultConfiguration implements Configuration {
 	 * Cache of subcontexts, by {true,false}-prefix.
 	 */
 	private Map<String, Properties> subcontextCache;
+
+	/**
+	 * Properties added at runtime.
+	 */
+	private IncludeProperties runtimeProperties;
 
 	/**
 	 * Creates a Default Configuration.
@@ -266,7 +269,8 @@ public class DefaultConfiguration implements Configuration {
 
 		// subContextCache is updated on the fly so ensure no concurrent modification.
 		subcontextCache = Collections.synchronizedMap(new HashMap<>());
-		currentEnvironment = null;
+		runtimeProperties = new IncludeProperties("Runtime: property added at runtime");
+		currentProfile = null;
 	}
 
 	/**
@@ -299,10 +303,7 @@ public class DefaultConfiguration implements Configuration {
 			loadEnvironmentProperties();
 		}
 
-		setEnvironmentProfile();
-
-		// Check if environment set
-		checkEnvironmentProperty();
+		checkProfileProperty();
 
 		// Now perform variable substitution.
 		for (String key : backing.keySet()) {
@@ -712,7 +713,7 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	private void loadSystemProperties() {
 		boolean overWriteOnly = getBoolean(USE_SYSTEM_OVERWRITEONLY, false);
-		List<Object> allowedPrefixes = getList(USE_SYSTEM_PREFIXES);
+		List<String> allowedPrefixes = Arrays.asList(getStringArray(USE_SYSTEM_PREFIXES));
 		System
 			.getProperties()
 			.forEach((key, value) -> mergeExternalProperty("System Properties",
@@ -726,25 +727,10 @@ public class DefaultConfiguration implements Configuration {
 	 * Load the OS Environment Properties into Config.
 	 */
 	private void loadEnvironmentProperties() {
-		List<Object> allowedPrefixes = getList(USE_OSENV_PREFIXES);
+		List<String> allowedPrefixes = Arrays.asList(getStringArray(USE_OSENV_PREFIXES));
 		System
 			.getenv()
 			.forEach((key, value) -> mergeExternalProperty("Environment Properties", key, value, false, allowedPrefixes));
-	}
-
-	/**
-	 * Set the Environment Profile if it has been set as a system or environment property.
-	 * If both are defined, system property overrides and environment property
-	 */
-	private void setEnvironmentProfile() {
-
-		environmentProfile = ObjectUtils.firstNonNull(backing.get(PROFILE_PROPERTY), System.getProperty(PROFILE_PROPERTY), System.getenv().get(PROFILE_PROPERTY));
-
-		if (StringUtils.isBlank(environmentProfile)) {
-			recordMessage("Environment Profile Property <" + PROFILE_PROPERTY + "> has not been defined.");
-		} else {
-			recordMessage("Environment Profile Property <" + PROFILE_PROPERTY + "> has been defined as " + environmentProfile);
-		}
 	}
 
 	/**
@@ -761,7 +747,7 @@ public class DefaultConfiguration implements Configuration {
 		final String key,
 		final String value,
 		final boolean overWriteOnly,
-		final List<Object> allowedPrefixes) {
+		final List<String> allowedPrefixes) {
 
 		// Check for "include" keys (should not come from System or Environment Properties)
 		if (INCLUDE.equals(key) || INCLUDE_AFTER.equals(key)) {
@@ -789,7 +775,7 @@ public class DefaultConfiguration implements Configuration {
 	 * @param key             the key to check
 	 * @return true if the key is an allowed prefix
 	 */
-	private boolean isAllowedKeyPrefix(final List<Object> allowedPrefixes, final String key) {
+	private boolean isAllowedKeyPrefix(final List<String> allowedPrefixes, final String key) {
 
 		// If no prefixes defined, then ALL keys are allowed
 		if (allowedPrefixes == null || allowedPrefixes.isEmpty()) {
@@ -797,8 +783,8 @@ public class DefaultConfiguration implements Configuration {
 		}
 
 		// Check allowed prefixes
-		for (Object prefix : allowedPrefixes) {
-			if (key.startsWith(prefix.toString())) {
+		for (String prefix : allowedPrefixes) {
+			if (key.startsWith(prefix)) {
 				return true;
 			}
 		}
@@ -976,7 +962,10 @@ public class DefaultConfiguration implements Configuration {
 
 	@Override
 	public boolean containsKey(final String key) {
-		return backing.containsKey(getKey(key));
+		if (useProfileKey(key) && backing.containsKey(getProfileKey(key))) {
+			return true;
+		}
+		return backing.containsKey(key);
 	}
 
 	@Override
@@ -1021,7 +1010,10 @@ public class DefaultConfiguration implements Configuration {
 
 	@Override
 	public boolean getBoolean(final String key) {
-		return booleanBacking.contains(getKey(key));
+		if (useProfileKey(key) && booleanBacking.contains(getProfileKey(key))) {
+			return true;
+		}
+		return booleanBacking.contains(key);
 	}
 
 	@Override
@@ -1331,18 +1323,19 @@ public class DefaultConfiguration implements Configuration {
 	}
 
 	/**
+	 *
 	 * @param key the property key
 	 * @return the property value or null
 	 */
 	protected String get(final String key) {
-		String result = backing.get(getKey(key));
-
-		if (StringUtils.isNotBlank(result)) {
-			//Final substitution check
-			result = StringSubstitutor.replace(result, backing);
+		// Check profile property
+		if (useProfileKey(key)) {
+			String result = backing.get(getProfileKey(key));
+			if (result != null) {
+				return result;
+			}
 		}
-
-		return result;
+		return backing.get(key);
 	}
 
 	/**
@@ -1364,9 +1357,12 @@ public class DefaultConfiguration implements Configuration {
 			throw new IllegalArgumentException("value parameter can not be null.");
 		}
 
-		recordMessage("modifyProperties() - Adding property '" + name + "' with the value '" + value + "'.");
+		//Check for substitution variables
+		final String updatedValue = StringSubstitutor.replace(value, backing);
 
-		new IncludeProperties("Runtime: added at runtime").put(name, value);
+		recordMessage("modifyProperties() - Adding property '" + name + "' with the value '" + updatedValue + "'.");
+
+		runtimeProperties.put(name, updatedValue);
 
 		handlePropertiesChanged();
 	}
@@ -1377,20 +1373,60 @@ public class DefaultConfiguration implements Configuration {
 	protected void handlePropertiesChanged() {
 		// clear the subContext cache, it's now invalid
 		subcontextCache.clear();
-		// Check if environment changed
-		checkEnvironmentProperty();
-		setEnvironmentProfile();
+		// Check if profile changed
+		checkProfileProperty();
+	}
+
+	/**
+	 * Set the current Profile if it has been set as property. An application defined property overrides,
+	 * a JVM System property which overrides a OS environment variable
+	 */
+	protected void checkProfileProperty() {
+
+		currentProfile = ObjectUtils.firstNonNull(backing.get(PROFILE_PROPERTY), System.getProperty(PROFILE_PROPERTY), System.getenv().get(PROFILE_PROPERTY));
+
+		//Temporarily exists until deprecated Environment Property is removed
+		if (StringUtils.isBlank(currentProfile)) {
+			//Might not be using profile property, try the environment property for backwards compatibility
+			currentProfile = ObjectUtils.firstNonNull(backing.get(ENVIRONMENT_PROPERTY), System.getProperty(ENVIRONMENT_PROPERTY), System.getenv().get(ENVIRONMENT_PROPERTY));
+		}
+
+		if (StringUtils.isBlank(currentProfile)) {
+			recordMessage("Profile Property <" + PROFILE_PROPERTY + "> has not been defined.");
+		} else {
+			recordMessage("Profile Property <" + PROFILE_PROPERTY + "> has been defined as " + currentProfile);
+		}
+	}
+
+	/**
+	 * @param key the property key
+	 * @return true if check suffix
+	 */
+	protected boolean useProfileKey(final String key) {
+		// Has environment and is not the environment property
+		return currentProfile != null && !ENVIRONMENT_PROPERTY.equals(key) && !PROFILE_PROPERTY.equals(key);
+	}
+
+	/**
+	 * @param key the property key
+	 * @return the property key with the environment suffix
+	 */
+	protected String getProfileKey(final String key) {
+		if (useProfileKey(key)) {
+			return key + "." + currentProfile;
+		} else {
+			return key;
+		}
 	}
 
 	/**
 	 * Check if the environment property has been set.
 	 *
-	 * @deprecated - Replaced by Environment Profile
+	 * @deprecated - Replaced by see checkProfileProperty
 	 */
 	@Deprecated
 	protected void checkEnvironmentProperty() {
-		String env = backing.get(ENVIRONMENT_PROPERTY);
-		currentEnvironment = (env == null || env.isEmpty()) ? null : env;
+		checkProfileProperty();
 	}
 
 	/**
@@ -1400,8 +1436,7 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	@Deprecated
 	protected boolean useEnvironmentKey(final String key) {
-		// Has environment and is not the environment property
-		return currentEnvironment != null && !ENVIRONMENT_PROPERTY.equals(key);
+		return useProfileKey(key);
 	}
 
 	/**
@@ -1411,25 +1446,7 @@ public class DefaultConfiguration implements Configuration {
 	 */
 	@Deprecated
 	protected String getEnvironmentKey(final String key) {
-		if (useEnvironmentKey(key)) {
-			return key + "." + currentEnvironment;
-		} else {
-			return key;
-		}
-	}
-
-	private String getKey(final String key) {
-
-		final String profileKey = key + "." + environmentProfile;
-		final String currentEnvKey = key + "." + currentEnvironment;
-
-		if (StringUtils.isNotBlank(environmentProfile) && backing.containsKey(profileKey)) {
-			return profileKey;
-		} else if (StringUtils.isNotBlank(currentEnvironment) && backing.containsKey(currentEnvKey)) {
-			return currentEnvKey;
-		} else {
-			return key;
-		}
+		return getProfileKey(key);
 	}
 
 	/**
@@ -1438,7 +1455,7 @@ public class DefaultConfiguration implements Configuration {
 	 * <p>This is used to ensure on the call of put(key, value) is immediately loaded into the
 	 * {@link DefaultConfiguration} to respect the order hierarchy for the configuration.</p>
 	 */
-	class IncludeProperties extends Properties {
+	private class IncludeProperties extends Properties {
 
 		/**
 		 * The properties file location (if applicable).
@@ -1498,6 +1515,18 @@ public class DefaultConfiguration implements Configuration {
 
 				return super.put(key, value);
 			}
+		}
+
+		@Override
+		public synchronized int hashCode() {
+			int hash = 5;
+			hash = 97 * hash + Objects.hashCode(this.location);
+			return hash;
+		}
+
+		@Override
+		public synchronized boolean equals(final Object obj) {
+			return obj instanceof IncludeProperties && Objects.equals(this.location, ((IncludeProperties) obj).location);
 		}
 	}
 }
