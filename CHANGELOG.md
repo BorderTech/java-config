@@ -11,6 +11,7 @@
 * Refactor of substitution code to use apache commons text
 * includes can define substitution variables e.g. `include=${previously.defined.property.key}/special-file.properties`
 * Increase in unit tests and code coverage. 
+* Issue 34 addition of user home resource directory
 
 ## 1.0.6
 

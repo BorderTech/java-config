@@ -66,6 +66,8 @@ The default implementation looks for the following resources either as a classpa
  - `bordertech-app.properties` - application properties
  - `bordertech-local.properties` - local developer properties
 
+The default implementation looks for the resources on the classpath, the user home directory or the current working directory.
+
 Projects will usually use `bordertech-app.properties` resource files.
 
 The priority of the properties is in reverse order to the list of resources (i.e. `local` overrides `app` which overrides `defaults`).

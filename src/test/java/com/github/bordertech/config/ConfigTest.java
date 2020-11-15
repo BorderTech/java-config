@@ -110,7 +110,7 @@ public class ConfigTest {
 
 		FileUtils.touch(new File("./target/parameters.touch"));
 
-		Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> Config.getInstance().getString(key).equals("IN-DEFAULTS"));
+		Awaitility.waitAtMost(5, TimeUnit.SECONDS).until(() -> Config.getInstance().getString(key).equals("IN-DEFAULTS"));
 	}
 
 	@Test(expected = IllegalStateException.class)
