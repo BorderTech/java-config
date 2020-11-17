@@ -2,6 +2,8 @@ package com.github.bordertech.config;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConversionException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -702,6 +704,37 @@ public class DefaultConfigurationTest {
 			"com/github/bordertech/config/DefaultConfigurationTest_include.properties");
 
 		Assert.assertEquals("physicalFileIncludeValue", config.getString("physical.file.include"));
+	}
+
+	@Test
+	public void testLoadFileFromUserHome() throws Exception {
+
+		Properties props = new Properties();
+		props.setProperty("user.home.file.include", "userHomeIncludeValue");
+		props.store(new FileWriter(FileUtils.getFile(SystemUtils.getUserHome(), "DefaultConfigTestIncludeUserHome.properties")), null);
+
+		DefaultConfiguration config = new DefaultConfiguration(
+			"com/github/bordertech/config/DefaultConfigurationTest_include.properties");
+
+		Assert.assertEquals("userHomeIncludeValue", config.getString("user.home.file.include"));
+	}
+
+	@Test
+	public void testLoadFileFromMultiplePlaces() throws Exception {
+
+		Properties props = new Properties();
+		props.setProperty("user.home.file.include.multi", "userHomeIncludeValue");
+		props.store(new FileWriter(FileUtils.getFile(SystemUtils.getUserHome(), "DefaultConfigTestIncludeMulti.properties")), null);
+		props.clear();
+
+		props = new Properties();
+		props.setProperty("user.home.file.include.multi", "userDirIncludeValue");
+		props.store(new FileWriter(FileUtils.getFile(SystemUtils.getUserHome(), "DefaultConfigTestIncludeMulti.properties")), null);
+
+		DefaultConfiguration config = new DefaultConfiguration(
+			"com/github/bordertech/config/DefaultConfigurationTest_include.properties");
+
+		Assert.assertEquals("userDirIncludeValue", config.getString("user.home.file.include.multi"));
 	}
 
 	/**
