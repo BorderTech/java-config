@@ -20,7 +20,7 @@ jdk:
 
 ## Travis installs the project with the following maven command:- "mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V"
 script:
-  - mvn package sonar:sonar -Dsonar.projectKey="mccabd-java-config"
+ - mvn package sonar:sonar -Dsonar.projectKey="bordertech-java-config"
 
 ## Send Coverage to Codacy
 after_success:
