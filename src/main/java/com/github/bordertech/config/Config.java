@@ -132,8 +132,8 @@ public final class Config {
 	public static Configuration copyConfiguration(final Configuration original) {
 		Configuration copy = new MapConfiguration(new HashMap<>());
 
-		for (Iterator<?> i = original.getKeys(); i.hasNext();) {
-			String key = (String) i.next();
+		for (Iterator<String> i = original.getKeys(); i.hasNext();) {
+			String key = i.next();
 			Object value = original.getProperty(key);
 
 			if (value instanceof List) {
@@ -256,8 +256,8 @@ public final class Config {
 	private static Configuration getDefaultConfiguration() {
 		// Create Instance
 		try {
-			Class<Configuration> clazz = (Class<Configuration>) Class.forName(InitHelper.DEFAULT_CONFIG_IMPL.trim());
-			return clazz.newInstance();
+			Class<?> clazz = Class.forName(InitHelper.DEFAULT_CONFIG_IMPL.trim());
+			return (Configuration) clazz.newInstance();
 		} catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
 			throw new IllegalStateException("Failed to instantiate override default config of class " + InitHelper.DEFAULT_CONFIG_IMPL, e);
 		}

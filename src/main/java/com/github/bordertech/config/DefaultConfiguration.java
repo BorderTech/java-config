@@ -656,7 +656,7 @@ public class DefaultConfiguration implements Configuration {
 
 		// Are we visible to this class loader?
 		try {
-			Class test = loader.loadClass(getClass().getName());
+			Class<?> test = loader.loadClass(getClass().getName());
 
 			if (test == getClass()) {
 				recordMessage("Visible to ContextClassLoader");
