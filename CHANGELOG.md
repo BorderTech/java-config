@@ -2,6 +2,13 @@
 
 ## Release in-progress
 
+* Updated the following dependencies:
+  * com.github.bordertech.common:qa-parent from 1.0.19 to 1.0.24
+  * org.apache.commons:commons-lang3 from 3.12.0 to 3.22.0
+  * org.apache.commons:commons-text from 1.9 to 1.15.0
+  * org.apache.commons:commons-io from 2.11.0 to 2.22.0
+  * org.awaitility:awaitility from 4.1.1 to 4.3.0
+
 ## 1.0.8
 
 ### Enhancements

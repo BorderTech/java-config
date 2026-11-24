@@ -1398,9 +1398,9 @@ public class DefaultConfiguration implements Configuration {
 		}
 
 		if (StringUtils.isBlank(currentProfile)) {
-			recordMessage("Profile Property <" + PROFILE_PROPERTY + "> has not been defined.");
+			recordMessage("Profile Property [" + PROFILE_PROPERTY + "] has not been defined.");
 		} else {
-			recordMessage("Profile Property <" + PROFILE_PROPERTY + "> has been defined as " + currentProfile);
+			recordMessage("Profile Property [" + PROFILE_PROPERTY + "] has been defined as " + currentProfile);
 		}
 	}
 
