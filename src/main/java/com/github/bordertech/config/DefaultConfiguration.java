@@ -1006,9 +1006,16 @@ public class DefaultConfiguration implements Configuration {
 
 	@Override
 	public boolean getBoolean(final String key) {
-		if (useProfileKey(key) && booleanBacking.contains(getProfileKey(key))) {
-			return true;
+		// Have to handle Boolean profileKeys differently as false values not stored in booleanCache and could fall back to original key value
+		if (useProfileKey(key)) {
+			String profileKey = getProfileKey(key);
+			// Check if profile key exists in backing
+			if (backing.containsKey(profileKey)) {
+				// Check boolean cache for true value of profile key otherwise false
+				return booleanBacking.contains(profileKey);
+			}
 		}
+		// Check boolean cache
 		return booleanBacking.contains(key);
 	}
 

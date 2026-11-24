@@ -1,13 +1,7 @@
 package com.github.bordertech.config;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConversionException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
+import static com.github.bordertech.config.DefaultConfiguration.ENVIRONMENT_PROPERTY;
+import static com.github.bordertech.config.DefaultConfiguration.PROFILE_PROPERTY;
 import java.io.File;
 import java.io.FileWriter;
 import java.math.BigDecimal;
@@ -17,9 +11,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-
-import static com.github.bordertech.config.DefaultConfiguration.ENVIRONMENT_PROPERTY;
-import static com.github.bordertech.config.DefaultConfiguration.PROFILE_PROPERTY;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConversionException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * DefaultConfiguration_Test - JUnit tests for {@link DefaultConfiguration}.
@@ -67,6 +66,16 @@ public class DefaultConfigurationTest {
 	private static final String BOOLEAN_TRUE_PROPERTY_KEY = "simple.booleanTruePropertyKey";
 
 	/**
+	 * The default value for this property is true.
+	 */
+	private static final String BOOLEAN_TRUE_SUFFIX_PROPERTY_KEY = "envSuffix.booleanKey1";
+
+	/**
+	 * The default value for this property is false.
+	 */
+	private static final String BOOLEAN_FALSE_SUFFIX_PROPERTY_KEY = "envSuffix.booleanKey2";
+
+	/**
 	 * The value for this property should be "false".
 	 */
 	private static final String BOOLEAN_FALSE_PROPERTY_KEY = "simple.booleanFalsePropertyKey";
@@ -78,8 +87,16 @@ public class DefaultConfigurationTest {
 
 	@Before
 	public void loadProperties() {
+		System.clearProperty(ENVIRONMENT_PROPERTY);
+		System.clearProperty(PROFILE_PROPERTY);
 		config = new DefaultConfiguration(
 			"com/github/bordertech/config/DefaultConfigurationTest.properties");
+	}
+
+	@After
+	public void teardown() {
+		System.clearProperty(ENVIRONMENT_PROPERTY);
+		System.clearProperty(PROFILE_PROPERTY);
 	}
 
 	@Test
@@ -368,6 +385,30 @@ public class DefaultConfigurationTest {
 	}
 
 	@Test
+	public void testGetBooleanWithProfileKey() {
+
+		// Test properties with no profile set (ie base value)
+		Assert.assertTrue("Incorrect boolean value for " + BOOLEAN_TRUE_SUFFIX_PROPERTY_KEY, config.getBoolean(BOOLEAN_TRUE_SUFFIX_PROPERTY_KEY));
+		Assert.assertFalse("Incorrect boolean value for " + BOOLEAN_FALSE_SUFFIX_PROPERTY_KEY, config.getBoolean(BOOLEAN_FALSE_SUFFIX_PROPERTY_KEY));		
+
+		// Set profile (ie override values)
+		System.setProperty(PROFILE_PROPERTY, "suffix1");
+		config.refresh();
+
+		// Test properties with profile set
+		Assert.assertFalse("Incorrect profile boolean value for " + BOOLEAN_TRUE_SUFFIX_PROPERTY_KEY, config.getBoolean(BOOLEAN_TRUE_SUFFIX_PROPERTY_KEY));
+		Assert.assertTrue("Incorrect profile boolean value for " + BOOLEAN_FALSE_SUFFIX_PROPERTY_KEY, config.getBoolean(BOOLEAN_FALSE_SUFFIX_PROPERTY_KEY));		
+
+		// Set profile with no values set (ie no overrides)
+		System.setProperty(PROFILE_PROPERTY, "no-suffix");
+		config.refresh();
+
+		// Test properties are original base value (no suffix)
+		Assert.assertTrue("Incorrect boolean value for " + BOOLEAN_TRUE_SUFFIX_PROPERTY_KEY, config.getBoolean(BOOLEAN_TRUE_SUFFIX_PROPERTY_KEY));
+		Assert.assertFalse("Incorrect boolean value for " + BOOLEAN_FALSE_SUFFIX_PROPERTY_KEY, config.getBoolean(BOOLEAN_FALSE_SUFFIX_PROPERTY_KEY));		
+	}
+
+	@Test
 	public void testGetFloat() {
 		final float expectedVal = 234.0f;
 		Assert.assertEquals("Incorrect float value for " + INT_PROPERTY_KEY,
@@ -509,9 +550,6 @@ public class DefaultConfigurationTest {
 		config.refresh();
 		Assert.assertTrue("Key does not exist", config.containsKey(ENV_SUFFIX_PROPERTY_KEY));
 		assertPropertyEquals(ENV_SUFFIX_PROPERTY_KEY, "envSuffixPropertyValue");
-
-		System.clearProperty(PROFILE_PROPERTY);
-		config.refresh();
 	}
 
 	@Test
@@ -572,9 +610,6 @@ public class DefaultConfigurationTest {
 	@Test
 	public void testGetProfileKey() {
 
-		System.clearProperty(PROFILE_PROPERTY);
-		config.refresh();
-
 		final String key = "key";
 		Assert.assertEquals(key, config.getProfileKey(key));
 
@@ -594,9 +629,6 @@ public class DefaultConfigurationTest {
 	@Test
 	public void testUseProfileSuffixKey() {
 
-		System.clearProperty(PROFILE_PROPERTY);
-		config.refresh();
-
 		Assert.assertFalse(config.useProfileKey("anything"));
 
 		System.setProperty(PROFILE_PROPERTY, "env");
@@ -605,16 +637,10 @@ public class DefaultConfigurationTest {
 		Assert.assertFalse(config.useProfileKey(PROFILE_PROPERTY));
 
 		Assert.assertTrue(config.useProfileKey("key"));
-
-		System.clearProperty(PROFILE_PROPERTY);
-		config.refresh();
 	}
 
 	@Test
 	public void testGetEnvironmentKey() {
-
-		System.clearProperty(ENVIRONMENT_PROPERTY);
-		config.refresh();
 
 		final String key = "key";
 		Assert.assertEquals(key, config.getEnvironmentKey(key));
@@ -623,15 +649,10 @@ public class DefaultConfigurationTest {
 		config.refresh();
 
 		Assert.assertEquals(key + ".env", config.getEnvironmentKey(key));
-
-		System.clearProperty(ENVIRONMENT_PROPERTY);
 	}
 
 	@Test
 	public void testUseEnvironmentSuffixKey() {
-
-		System.clearProperty(ENVIRONMENT_PROPERTY);
-		config.refresh();
 
 		Assert.assertFalse(config.useEnvironmentKey("anything"));
 
@@ -641,15 +662,10 @@ public class DefaultConfigurationTest {
 		Assert.assertFalse(config.useEnvironmentKey(ENVIRONMENT_PROPERTY));
 
 		Assert.assertTrue(config.useEnvironmentKey("key"));
-
-		System.clearProperty(ENVIRONMENT_PROPERTY);
 	}
 
 	@Test
 	public void testUseEnvironmentProfile() {
-
-		System.clearProperty(PROFILE_PROPERTY);
-		config.refresh();
 
 		String env = "config_test";
 
@@ -677,9 +693,6 @@ public class DefaultConfigurationTest {
 		config.addProperty(key + "." + env + "second", profileValue + "Second");
 
 		Assert.assertEquals(profileValue + "Second", config.get(key));
-
-		System.clearProperty(PROFILE_PROPERTY);
-		config.refresh();
 	}
 
 	@Test
