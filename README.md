@@ -2,10 +2,9 @@
 
 ## Status
 [![Build Status](https://github.com/BorderTech/java-config/actions/workflows/github-actions-build.yml/badge.svg)](https://github.com/BorderTech/java-config/actions/workflows/github-actions-build.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=alert_status)](https://sonarcloud.io/dashboard?id=bordertech-java-config)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=bordertech-java-config)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=coverage)](https://sonarcloud.io/dashboard?id=bordertech-java-config)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ff9d14e9be2c4071b5e94bed4c7545cb)](https://www.codacy.com/gh/BorderTech/java-config?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=BorderTech/java-config&amp;utm_campaign=Badge_Grade)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=bordertech-java-config)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=bordertech-java-config)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=bordertech-java-config&metric=coverage)](https://sonarcloud.io/summary/new_code?id=bordertech-java-config)
 [![Javadocs](https://www.javadoc.io/badge/com.github.bordertech.config/config.svg)](https://www.javadoc.io/doc/com.github.bordertech.config/config)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.bordertech.config/config.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.github.bordertech.config%22%20AND%20a:%22config%22)
 
