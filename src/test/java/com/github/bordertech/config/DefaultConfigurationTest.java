@@ -521,6 +521,15 @@ public class DefaultConfigurationTest {
 	}
 
 	@Test
+	public void testClearBooleanCache() {
+		String key = "testboolean";
+		config.addProperty(key, true);
+		Assert.assertTrue("Boolean property should be true", config.getBoolean(key));
+		config.clear();
+		Assert.assertFalse("Boolean property should be false after clear", config.getBoolean(key));
+	}
+
+	@Test
 	public void testClearProperty() {
 
 		String anyKey = "ANY_KEY";
@@ -529,6 +538,15 @@ public class DefaultConfigurationTest {
 		Assert.assertEquals(anyValue, config.getString(anyKey));
 		config.clearProperty(anyKey);
 		Assert.assertNull(config.getString(anyKey));
+	}
+
+	@Test
+	public void testClearPropertyBooleanCache() {
+		String key = "testboolean";
+		config.addProperty(key, true);
+		Assert.assertTrue("Boolean property should be true", config.getBoolean(key));
+		config.clearProperty(key);
+		Assert.assertFalse("Boolean property should be false after clear property", config.getBoolean(key));
 	}
 
 	@Test

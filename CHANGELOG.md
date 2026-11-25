@@ -10,6 +10,7 @@
   * org.apache.commons:commons-io from 2.11.0 to 2.22.0
   * org.awaitility:awaitility from 4.1.1 to 4.3.0
 * Fix DefaultConfiguration to handle Boolean properties with profileKeys correctly.
+* Fix DefaultConfiguration to clear the Boolean cache when clearing or removing properties
 
 ## 1.0.8
 

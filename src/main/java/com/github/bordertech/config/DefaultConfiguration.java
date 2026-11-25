@@ -947,12 +947,14 @@ public class DefaultConfiguration implements Configuration {
 	@Override
 	public void clear() {
 		backing.clear();
+		booleanBacking.clear();
 		handlePropertiesChanged();
 	}
 
 	@Override
 	public void clearProperty(final String key) {
 		backing.remove(key);
+		booleanBacking.remove(key);
 		handlePropertiesChanged();
 	}
 
