@@ -2,6 +2,8 @@
 
 ## Release in-progress
 
+## 1.0.9
+
 ### Enhancements
 * Updated the following dependencies:
   * com.github.bordertech.common:qa-parent from 1.0.19 to 1.0.24
