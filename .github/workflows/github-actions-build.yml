@@ -2,7 +2,10 @@ name: Java CI
 
 # Trigger workflow on push or pull_request
 # Note - the first pull_request from a forked repo will need to be given approval to run
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch: # Adds a "Run workflow" button in GitHub Actions
 
 jobs:
   build:
