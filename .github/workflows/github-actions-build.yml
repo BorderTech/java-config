@@ -36,7 +36,7 @@ jobs:
     - name: Upload SBOMs as GitHub Artifact
       uses: actions/upload-artifact@v7
       with:
-        name: sbom-${{ github.run_number }}
+        name: ${{ github.event.repository.name }}-sbom-${{ github.run_number }}
         path: |
           target/bom.json
           target/bom.xml
@@ -56,7 +56,7 @@ jobs:
     - name: Upload Trivy sarif
       uses: actions/upload-artifact@v7
       with:
-        name: trivy-sarif-${{ github.run_number }}
+        name: ${{ github.event.repository.name }}-trivy-sarif-${{ github.run_number }}
         path: trivy-results.sarif
         overwrite: true
         retention-days: 7
