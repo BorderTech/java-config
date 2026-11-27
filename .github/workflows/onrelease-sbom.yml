@@ -36,7 +36,7 @@ jobs:
         -DoutputName="${REPO_NAME}-${TAG_NAME}.cdx"
 
     - name: Upload SBOM to GitHub Release
-      uses: softprops/action-gh-release@v3
+      uses: softprops/action-gh-release@v3 # NOSONAR
       with:
         files: target/*.cdx.json
         fail_on_unmatched_files: true
