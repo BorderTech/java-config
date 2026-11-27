@@ -1,10 +1,5 @@
 package com.github.bordertech.config;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.MapConfiguration;
-import org.apache.commons.lang.StringUtils;
-
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +8,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.MapConfiguration;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * The Config class is the central access point to the configuration mechanism, and is used to read or modify the
@@ -226,7 +225,7 @@ public final class Config {
 	 */
 	private static Configuration checkSPIConfiguration() {
 
-		if (!InitHelper.SPI_ENABLED) {
+		if (!InitHelper.isSpiEnabled()) {
 			return null;
 		}
 
@@ -242,7 +241,7 @@ public final class Config {
 			}
 
 			//Add the base configuration last so it is overridden.
-			if (InitHelper.SPI_APPEND_DEFAULT_CONFIG) {
+			if (InitHelper.isSpiAppendDefaultConfig()) {
 				compositeConfig.addConfiguration(getDefaultConfiguration());
 			}
 			return compositeConfig;
@@ -256,10 +255,10 @@ public final class Config {
 	private static Configuration getDefaultConfiguration() {
 		// Create Instance
 		try {
-			Class<Configuration> clazz = (Class<Configuration>) Class.forName(InitHelper.DEFAULT_CONFIG_IMPL.trim());
+			Class<Configuration> clazz = (Class<Configuration>) Class.forName(InitHelper.getDefaultConfigImplClassName().trim());
 			return clazz.newInstance();
 		} catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
-			throw new IllegalStateException("Failed to instantiate override default config of class " + InitHelper.DEFAULT_CONFIG_IMPL, e);
+			throw new IllegalStateException("Failed to instantiate override default config of class " + InitHelper.getDefaultConfigImplClassName(), e);
 		}
 	}
 
