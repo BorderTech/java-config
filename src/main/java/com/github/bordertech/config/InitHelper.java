@@ -13,9 +13,10 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Helper class for {@link Config} initialisation.
  * <p>
- * The helper checks for configuration overrides by searching for a property file named <code>BT_CONFIG_FILE</code> in
- * the user home directory, the current classpath and the system classpath. The file name can be overridden by setting
- * an environment or system property with the key <code>bordertech.config.file</code>.
+ * The helper checks for configuration overrides by searching for a property file named
+ * <code>bordertech-config.properties</code> in the user home directory, the current classpath and the system classpath.
+ * The file name can be overridden by setting an environment or system property with the key
+ * <code>BT_CONFIG_FILE</code>.
  * </p>
  * <p>
  * The following properties can be set:-
@@ -62,45 +63,80 @@ public final class InitHelper {
 			"bordertech-app.properties",
 			// The last properties which are loaded are local/developer properties
 			"bordertech-local.properties");
-	private static final List<String> DEFAULT_RESOURCE_LOAD_ORDER;
 
 	/**
-	 * Default configuration class name. *
+	 * The resource order.
 	 */
-	public static final String DEFAULT_CONFIG_IMPL;
+	private static List<String> defaultResourceLoadOrder;
+
+	/**
+	 * Default configuration class name.
+	 */
+	private static String defaultConfigImplClassName;
+
 	/**
 	 * SPI enabled flag.
 	 */
-	public static final boolean SPI_ENABLED;
+	private static boolean spiEnabled;
+
 	/**
-	 * SPI append default config flag.
+	 * SPI append default config to SPI config flag.
 	 */
-	public static final boolean SPI_APPEND_DEFAULT_CONFIG;
+	private static boolean spiAppendDefaultConfig;
 
 	static {
-		// Load the config defaults (if exists)
-		String configFile = getDefaultConfigFileName();
-		Configuration configDefaults = loadPropertyFile(configFile);
-		// Default config impl
-		DEFAULT_CONFIG_IMPL = configDefaults.getString(PARAM_KEY_DEFAULT_CONFIG_IMPL, DefaultConfiguration.class.getName());
-		// Check if SPI enabled
-		SPI_APPEND_DEFAULT_CONFIG = configDefaults.getBoolean(PARAM_KEY_SPI_APPEND_DEFAULT, true);
-		SPI_ENABLED = configDefaults.getBoolean(PARAM_KEY_SPI_ENABLED, true);
-		// Load resource order
-		DEFAULT_RESOURCE_LOAD_ORDER = getResourceOrder(configDefaults);
+		loadDefaults();
 	}
 
 	/**
 	 * Private constructor.
 	 */
 	private InitHelper() {
+		// Do nothing
+	}
+
+	/**
+	 * Load the defaults used to initialise the configuration.
+	 */
+	static void loadDefaults() {
+		// Load the config defaults (if exists)
+		String configFile = getDefaultConfigFileName();
+		Configuration configDefaults = loadPropertyFile(configFile);
+		// Default config impl
+		defaultConfigImplClassName = configDefaults.getString(PARAM_KEY_DEFAULT_CONFIG_IMPL, DefaultConfiguration.class.getName());
+		// Check if SPI enabled
+		spiAppendDefaultConfig = configDefaults.getBoolean(PARAM_KEY_SPI_APPEND_DEFAULT, true);
+		spiEnabled = configDefaults.getBoolean(PARAM_KEY_SPI_ENABLED, true);
+		// Load resource order
+		defaultResourceLoadOrder = getResourceOrder(configDefaults);
+	}
+
+	/**
+	 * @return the default configuration class name. *
+	 */
+	public static String getDefaultConfigImplClassName() {
+		return defaultConfigImplClassName;
+	}
+
+	/**
+	 * @return true if SPI enabled, otherwise false
+	 */
+	public static boolean isSpiEnabled() {
+		return spiEnabled;
+	}
+
+	/**
+	 * @return true if append default configuration to SPI configuration, otherwise false
+	 */
+	public static boolean isSpiAppendDefaultConfig() {
+		return spiAppendDefaultConfig;
 	}
 
 	/**
 	 * @return the default resource load order.
 	 */
 	public static String[] getDefaultResourceLoadOrder() {
-		return DEFAULT_RESOURCE_LOAD_ORDER.toArray(new String[]{});
+		return defaultResourceLoadOrder.toArray(new String[]{});
 	}
 
 	/**

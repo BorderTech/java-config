@@ -1,7 +1,6 @@
 package com.github.bordertech.config;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 
 /**
  * Class to access the static default configuration of {@link InitHelper} to allow
@@ -12,19 +11,13 @@ public class AccessInitHelper {
 	private AccessInitHelper(){}
 
 	private static Field getField(String name) throws Exception {
-		Field field = InitHelper.class.getField(name);
-
+		Field field = InitHelper.class.getDeclaredField(name);
 		field.setAccessible(true);
-
-		Field modifiersFiled = Field.class.getDeclaredField("modifiers");
-		modifiersFiled.setAccessible(true);
-		modifiersFiled.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
 		return field;
 	}
 
 	public static void overrideSpiEnabled(boolean value, boolean resetConfig) throws Exception {
-		getField("SPI_ENABLED").set(null, value);
+		getField("spiEnabled").set(null, value);
 
 		if (resetConfig) {
 			Config.reset();
@@ -32,7 +25,7 @@ public class AccessInitHelper {
 	}
 
 	public static void overrideSpiAppend(boolean value, boolean resetConfig) throws Exception {
-		getField("SPI_APPEND_DEFAULT_CONFIG").set(null, value);
+		getField("spiAppendDefaultConfig").set(null, value);
 
 		if (resetConfig) {
 			Config.reset();
@@ -40,7 +33,7 @@ public class AccessInitHelper {
 	}
 
 	public static void overrideDefaultConfig(String defaultConfig, boolean resetConfig) throws Exception {
-		getField("DEFAULT_CONFIG_IMPL").set(null, defaultConfig);
+		getField("defaultConfigImplClassName").set(null, defaultConfig);
 
 		if (resetConfig) {
 			Config.reset();

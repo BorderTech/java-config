@@ -2,6 +2,8 @@
 
 ## Release in-progress
 
+* Modified InitHelper to provide getter methods instead of directly accessing private static fields.
+
 ## 1.0.9
 
 ### Enhancements
