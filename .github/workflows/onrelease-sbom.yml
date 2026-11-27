@@ -1,0 +1,42 @@
+name: Generate Release SBOM
+
+on:
+  release:
+    types: [published]
+
+# Required permissions to attach the SBOM to the release
+permissions:
+  contents: write
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout release
+      uses: actions/checkout@v7
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v6
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Build and Generate SBOM
+      env:
+        REPO_NAME: ${{ github.event.repository.name }}
+        TAG_NAME: ${{ github.event.release.tag_name }}
+      run: >
+        mvn -B -U package
+        org.cyclonedx:cyclonedx-maven-plugin:2.9.3:makeAggregateBom
+        -DskipTests=true
+        -DoutputFormat=json
+        -DoutputName="${REPO_NAME}-${TAG_NAME}.cdx"
+
+    - name: Upload SBOM to GitHub Release
+      uses: softprops/action-gh-release@v3 # NOSONAR
+      with:
+        files: target/*.cdx.json
+        fail_on_unmatched_files: true

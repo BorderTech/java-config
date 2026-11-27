@@ -23,7 +23,7 @@ jobs:
         distribution: 'temurin'
         cache: 'maven'
 
-    - name: Build Test and Verify
+    - name: Build Test and Verify for JDK8
       run: mvn -B -U clean verify
 
     - name: Set up JDK 17
@@ -31,6 +31,9 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+
+    - name: Build Test and Verify for JDK17
+      run: mvn -B -U clean verify
 
     # Generate SBOM (default is bom.json, bom.xml)
     - name: Generate SBOM
