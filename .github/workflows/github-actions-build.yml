@@ -4,8 +4,6 @@ name: Java CI
 # Note - the first pull_request from a forked repo will need to be given approval to run
 on:
   push:
-    tags-ignore:
-      - '**' # Ignores all tags, runs on all branches
   pull_request:
   workflow_dispatch: # Adds a "Run workflow" button in GitHub Actions
 
